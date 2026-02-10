@@ -137,8 +137,8 @@ export default function Promotions() {
   };
 
   // Obtener valores únicos para filtros
-  const uniquePrograms = [...new Set(alerts.map((a) => a.related_program).filter(Boolean))];
-  const uniqueSources = [...new Set(alerts.map((a) => a.source_name).filter(Boolean))];
+  const uniquePrograms = [...new Set(alerts.map((a) => a.related_program).filter((p): p is string => p !== null && p !== undefined))];
+  const uniqueSources = [...new Set(alerts.map((a) => a.source_name).filter((s): s is string => s !== null && s !== undefined))];
 
   return (
     <ProtectedRoute>
