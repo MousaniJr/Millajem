@@ -1,0 +1,51 @@
+[Region: europe-west4]
+==============
+Using Nixpacks
+==============
+context: p178-z_5v
+╔═══════════════════════ Nixpacks v1.38.0 ══════════════════════╗
+║ setup      │ python39                                         ║
+║───────────────────────────────────────────────────────────────║
+║ install    │ pip install -r requirements.txt                  ║
+║───────────────────────────────────────────────────────────────║
+║ start      │ uvicorn app.main:app --host 0.0.0.0 --port $PORT ║
+╚═══════════════════════════════════════════════════════════════╝
+internal
+load build definition from Dockerfile
+0ms
+internal
+load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+158ms
+internal
+load .dockerignore
+0ms
+internal
+load build context
+0ms
+stage-0
+WORKDIR /app/ cached
+0ms
+stage-0
+COPY .nixpacks/nixpkgs-5148520bfab61f99fd25fb9ff7bfbb50dad3c9db.nix .nixpacks/nixpkgs-5148520bfab61f99fd25fb9ff7bfbb50dad3c9db.nix
+43ms
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-5148520bfab61f99fd25fb9ff7bfbb50dad3c9db.nix && nix-collect-garbage -d
+28s
+29 store paths deleted, 210.76 MiB freed
+stage-0
+COPY . /app/.
+80ms
+stage-0
+RUN pip install -r requirements.txt
+107ms
+/bin/bash: line 1: pip: command not found
+Dockerfile:20
+-------------------
+18 |     ENV NIXPACKS_PATH=/opt/venv/bin:$NIXPACKS_PATH
+19 |     COPY . /app/.
+20 | >>> RUN --mount=type=cache,id=s/e1bbfcb6-f006-4c42-8059-18dc155ff560-/root/cache/pip,target=/root/.cache/pip pip install -r requirements.txt
+21 |
+22 |
+-------------------
+ERROR: failed to build: failed to solve: process "/bin/bash -ol pipefail -c pip install -r requirements.txt" did not complete successfully: exit code: 127
+Error: Docker build failed
