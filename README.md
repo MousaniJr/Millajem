@@ -2,6 +2,14 @@
 
 Sistema personal de gestión y monitoreo de puntos de lealtad, millas y Avios. Optimizado para maximizar beneficios en programas de España, Brasil y Gibraltar.
 
+## 🌐 **Aplicación en Producción**
+
+✅ **Estado**: Desplegado y funcionando en Railway
+- **Frontend**: Disponible en Railway (Next.js 14.2.35)
+- **Backend**: Disponible en Railway (FastAPI + Python 3.9)
+- **Base de datos**: SQLite (actualizable a PostgreSQL)
+- **Autenticación**: JWT con tokens de 7 días
+
 ## 🚀 Características
 
 - **Dashboard centralizado** de todos tus saldos de puntos y millas
@@ -97,43 +105,40 @@ Accede a **http://localhost:3000** e inicia sesión con tus credenciales.
 
 ## 🚂 Deploy en Railway
 
-### 1. Preparar proyecto
+✅ **Estado**: Proyecto desplegado exitosamente
 
-\`\`\`bash
-# Asegúrate de que todos los cambios están commiteados
-git add .
-git commit -m "Preparado para deploy"
-git push origin main
-\`\`\`
+### Configuración actual en Railway
 
-### 2. Deploy Backend
+**Backend:**
+- ✅ Python 3.9 con Dockerfile personalizado
+- ✅ FastAPI funcionando
+- ✅ SQLite (actualizable a PostgreSQL)
+- ✅ Variables de entorno configuradas:
+  - `SECRET_KEY`
+  - `ADMIN_USERNAME`
+  - `ADMIN_PASSWORD`
 
-1. Ve a [Railway.app](https://railway.app)
-2. Crea nuevo proyecto → Deploy from GitHub
-3. Selecciona el repositorio \`Millajem\`
-4. Configura las variables de entorno:
-   - \`SECRET_KEY\`
-   - \`ADMIN_USERNAME\`
-   - \`ADMIN_PASSWORD\`
-   - \`DATABASE_URL\` (Railway lo configurará automáticamente si añades PostgreSQL)
-5. Railway detectará automáticamente que es Python y lo desplegará
+**Frontend:**
+- ✅ Next.js 14.2.35
+- ✅ Build optimizado para producción
+- ✅ Variable configurada: `NEXT_PUBLIC_API_URL`
 
-### 3. Deploy Frontend
+### Para redeploy o actualizaciones
 
-1. En el mismo proyecto de Railway, añade un nuevo servicio
-2. Selecciona el mismo repositorio
-3. Configura:
-   - Root directory: \`frontend\`
-   - Build command: \`npm run build\`
-   - Start command: \`npm start\`
-4. Variables de entorno:
-   - \`NEXT_PUBLIC_API_URL\` - URL del backend de Railway (ej: \`https://millajem-backend.up.railway.app\`)
+1. Hacer cambios localmente
+2. Commit y push a GitHub:
+   \`\`\`bash
+   git add .
+   git commit -m "Descripción de cambios"
+   git push origin main
+   \`\`\`
+3. Railway detecta automáticamente y redespliega
 
-### 4. Configurar PostgreSQL (Recomendado para producción)
+### Para añadir PostgreSQL (opcional)
 
 1. En Railway, añade PostgreSQL al proyecto
 2. Railway configurará automáticamente \`DATABASE_URL\`
-3. El backend detectará y usará PostgreSQL en lugar de SQLite
+3. El backend detectará y usará PostgreSQL automáticamente
 
 ## 🔐 Seguridad
 
