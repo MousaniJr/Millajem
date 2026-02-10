@@ -1,0 +1,30 @@
+# FastAPI y servidor
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.0
+pydantic-settings==2.5.2
+
+# Base de datos
+sqlalchemy==2.0.35
+alembic==1.13.3
+
+# HTTP y requests
+httpx==0.27.2
+aiohttp==3.10.10
+
+# Telegram bot
+python-telegram-bot==21.7
+
+# Scheduler
+apscheduler==3.10.4
+
+# Utilidades
+python-dotenv==1.0.1
+python-multipart==0.0.12
+
+# CORS
+fastapi-cors==0.0.6
+
+# RSS Feed parsing
+feedparser==6.0.11
+beautifulsoup4==4.12.3
