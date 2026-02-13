@@ -1214,4 +1214,182 @@ def run_seed(db: Session):
     seed_brazil_additions(db)
     seed_uk_gibraltar_additions(db)
     seed_remaining_additions(db)
+    seed_full_v2(db)
     return True
+
+
+def seed_full_v2(db):
+    def get_prog(name):
+        p = db.query(models.LoyaltyProgram).filter_by(name=name).first()
+        return p.id if p else None
+    new_programs = [
+        dict(name='Finnair Plus', currency='Avios', country='INT',
+             category='airline', avios_ratio=1.0,
+             website_url='https://www.finnair.com/finnairplus',
+             notes='Programa Finnair, oneworld. Avios unificados IAG. Sweet spot para vuelos a Asia via Helsinki.'),
+        dict(name='Aer Lingus AerClub', currency='Avios', country='INT',
+             category='airline', avios_ratio=1.0,
+             website_url='https://www.aerlingus.com/aerclub',
+             notes='Programa IAG. Avios unificados. Transatlantico economico desde Europa.'),
+        dict(name='Air Europa SUMA', currency='Millas SUMA', country='ES',
+             category='airline', avios_ratio=None,
+             website_url='https://www.aireuropa.com/suma',
+             notes='SkyTeam. Vuela MAD-GRU directo. Alternativa a Iberia para Brasil desde Madrid.'),
+        dict(name='Flying Blue (AF/KLM)', currency='Miles Flying Blue', country='INT',
+             category='airline', avios_ratio=None,
+             website_url='https://www.flyingblue.com',
+             notes='SkyTeam. Promo Rewards mensuales hasta 50% descuento en millas. Economy desde 15.000 millas Europa.'),
+        dict(name='Virgin Atlantic Flying Club', currency='Virgin Points', country='INT',
+             category='airline', avios_ratio=None,
+             website_url='https://www.virginatlantic.com/flyingclub',
+             notes='Permite reservar metal Delta. Delta One a USA por ~50.000 puntos. Sin fuel surcharges en Delta.'),
+        dict(name='Turkish Miles & Smiles', currency='Miles', country='INT',
+             category='airline', avios_ratio=None,
+             website_url='https://www.turkishairlines.com/milesandsmiles',
+             notes='Star Alliance. Sin fuel surcharges en Lufthansa/SWISS. Round-the-world, Lufthansa First Class.'),
+        dict(name='Air Canada Aeroplan', currency='Aeroplan Points', country='INT',
+             category='airline', avios_ratio=None,
+             website_url='https://www.aircanada.com/aeroplan',
+             notes='Star Alliance. Sin fuel surcharges. Family pooling. Stopovers y mixed-cabin awards.'),
+        dict(name='TAP Miles&Go', currency='Miles TAP', country='INT',
+             category='airline', avios_ratio=None,
+             website_url='https://www.flytap.com/milesandgo',
+             notes='Star Alliance. El usuario ya lo tiene activo. Vuelos Lisboa-Brasil. Lifetime status disponible.'),
+        dict(name='IHG One Rewards', currency='IHG Points', country='INT',
+             category='hotel', avios_ratio=None,
+             website_url='https://www.ihg.com/onerewards',
+             notes='Ratio ~5:1 a Avios. InterContinental, Holiday Inn, Hotel Indigo. Buena presencia Espana/Brasil.'),
+        dict(name='Hilton Honors', currency='Hilton Points', country='INT',
+             category='hotel', avios_ratio=None,
+             website_url='https://www.hilton.com/honors',
+             notes='Ratio 10:1 via BA Avios. Mejor en USA/UK que Espana. Util para viajes a USA/Asia.'),
+    ]
+    for prog_data in new_programs:
+        if not db.query(models.LoyaltyProgram).filter_by(name=prog_data['name']).first():
+            db.add(models.LoyaltyProgram(**prog_data))
+    db.commit()
+    iberia_id = get_prog('Iberia Club')
+    ba_id = get_prog('British Airways Executive Club')
+    vueling_id = get_prog('Vueling Club')
+    new_cards = [
+        dict(name='Santander Iberia Club Visa', bank='Santander Espana', country='ES', card_network='Visa',
+             loyalty_program_id=iberia_id, base_earning_rate=0.5, bonus_categories=None,
+             annual_fee=48.0, currency='EUR', first_year_fee=None,
+             welcome_bonus=None, welcome_bonus_requirement='Tras gastar 700 EUR',
+             minimum_income=None, is_available=True, application_url='https://www.santander.es/particulares/tarjetas/iberia-club',
+             notes='0.5 Avios/EUR + 200 Avios/mes por domiciliar nomina+recibos. Opcion complementaria si ya eres cliente Santander.', recommendation_score=65),
+        dict(name='BBVA Iberia Icon Visa', bank='BBVA', country='ES', card_network='Visa',
+             loyalty_program_id=iberia_id, base_earning_rate=0.33, bonus_categories=None,
+             annual_fee=0.0, currency='EUR', first_year_fee=0.0,
+             welcome_bonus=9000, welcome_bonus_requirement='Condiciones BBVA',
+             minimum_income=None, is_available=True, application_url='https://www.bbva.es/personas/productos/tarjetas/iberia-icon.html',
+             notes='1 Avios/3 EUR. 9.000 Avios bienvenida. 10% descuento en iberia.com. Sin cuota anual.', recommendation_score=60),
+        dict(name='Visa Iberia Zenit', bank='CaixaBank', country='ES', card_network='Visa',
+             loyalty_program_id=iberia_id, base_earning_rate=3.0, bonus_categories='{"iberia": 5.0}',
+             annual_fee=948.0, currency='EUR', first_year_fee=None,
+             welcome_bonus=40000, welcome_bonus_requirement='Escalonado segun gasto',
+             minimum_income=None, is_available=False, application_url='https://www.iberia.com/es/iberia-plus/tarjeta-zenit/',
+             notes='Solo por invitacion. 3 Avios/EUR general, 5 Avios/EUR en Iberia. Status Oro automatico. La mejor tarjeta Iberia si tienes acceso.', recommendation_score=95),
+        dict(name='NatWest International Reward Black (GIB)', bank='NatWest International', country='GI', card_network='Visa',
+             loyalty_program_id=ba_id, base_earning_rate=0.5, bonus_categories='{"supermarkets": 1.0}',
+             annual_fee=336.0, currency='GBP', first_year_fee=None,
+             welcome_bonus=None, welcome_bonus_requirement=None,
+             minimum_income=None, is_available=True, application_url='https://www.natwestinternational.com/',
+             notes='Cashback convertible a BA Avios o Emirates. 0% FX fees. Potencialmente accesible desde Gibraltar. Verificar disponibilidad.', recommendation_score=68),
+        dict(name='BRB DUX Visa Infinite', bank='BRB', country='BR', card_network='Visa',
+             loyalty_program_id=None, base_earning_rate=5.0, bonus_categories='{"international": 7.0}',
+             annual_fee=1080.0, currency='BRL', first_year_fee=None,
+             welcome_bonus=None, welcome_bonus_requirement=None,
+             minimum_income=None, is_available=True, application_url='https://www.brb.com.br/',
+             notes='5 pts/R$1 nacional, 7 pts/R$1 internacional. Transfiere a Smiles, LATAM, TudoAzul. Requiere cuenta BRB.', recommendation_score=80),
+        dict(name='Bradesco Aeternum Visa Infinite', bank='Bradesco', country='BR', card_network='Visa',
+             loyalty_program_id=None, base_earning_rate=4.0, bonus_categories='{"international": 6.0}',
+             annual_fee=1440.0, currency='BRL', first_year_fee=None,
+             welcome_bonus=None, welcome_bonus_requirement=None,
+             minimum_income=None, is_available=True, application_url='https://banco.bradesco/html/classic/produtos-servicos/cartoes/cartoes-credito/aeternum.shtm',
+             notes='4 pts/R$1 nacional, 4-6 pts/R$1 internacional -> Livelo. Alta cuota pero excelente earning.', recommendation_score=78),
+    ]
+    for card_data in new_cards:
+        if not db.query(models.CreditCard).filter_by(name=card_data['name']).first():
+            db.add(models.CreditCard(**card_data))
+    new_opportunities = [
+        dict(name='Booking.com -> Avios via Iberia Partner', category='hotels', country='ES',
+             loyalty_program_id=iberia_id, earning_rate=1.0,
+             earning_description='1 Avios por EUR gastado en reservas Booking.com',
+             how_to_use='Accede a Booking.com a traves del portal Iberia Plus Store o vincula tu cuenta Iberia Club.',
+             requirements='Cuenta Iberia Club', signup_url='https://www.iberia.com/es/iberia-plus/shopping/',
+             notes='Partner directo de Iberia Club. Acumula Avios en reservas de hotel.', is_active=True, recommendation_score=75),
+        dict(name='Avis/Budget -> Avios por alquiler de coche', category='rideshare', country='ES',
+             loyalty_program_id=iberia_id, earning_rate=1.0,
+             earning_description='Avios por alquiler de coche con Avis o Budget',
+             how_to_use='Al reservar con Avis o Budget, indica tu numero Iberia Club para acumular Avios.',
+             requirements='Cuenta Iberia Club', signup_url='https://www.iberia.com/es/iberia-plus/partners/',
+             notes='Partner directo. Util en viajes por Espana, Brasil y UK.', is_active=True, recommendation_score=70),
+        dict(name='Vueling Club eStore - Portal compras Vueling', category='shopping_portal', country='ES',
+             loyalty_program_id=vueling_id, earning_rate=2.0,
+             earning_description='Avios por compras online en 100+ tiendas via portal Vueling',
+             how_to_use='Accede al eStore de Vueling Club antes de comprar en tiendas participantes.',
+             requirements='Cuenta Vueling Club', signup_url='https://www.vueling.com/es/vueling-club/gana-puntos/compras-online',
+             notes='Distinto del Iberia Plus Store aunque comparten moneda Avios. Complementario.', is_active=True, recommendation_score=72),
+        dict(name='Gib Oil GO Card - Combustible Gibraltar', category='fuel', country='GI',
+             loyalty_program_id=None, earning_rate=1.0,
+             earning_description='Puntos GO Card por litro de combustible en Gib Oil',
+             how_to_use='Solicita la GO Card en las gasolineras Gib Oil de Gibraltar.',
+             requirements='GO Card (gratuita)', signup_url='https://www.giboil.com/',
+             notes='Programa local Gibraltar. No convierte a Avios pero es util dado que Gibraltar tiene combustible mas barato.', is_active=True, recommendation_score=45),
+        dict(name='Compra directa de Avios - Iberia (hasta 50% bonus)', category='shopping_portal', country='ES',
+             loyalty_program_id=iberia_id, earning_rate=1.5,
+             earning_description='Compra Avios con hasta 50% bonus en promociones Iberia',
+             how_to_use='En promociones periodicas, Iberia ofrece hasta 50% bonus en compra de Avios.',
+             requirements='Cuenta Iberia Club', signup_url='https://www.iberia.com/es/iberia-plus/comprar-avios/',
+             notes='Con 50% bonus: coste ~1,54 ctvs/Avios. Qatar ofrece hasta 45% bonus. BA tiene Avios Booster.', is_active=True, recommendation_score=82),
+    ]
+    for opp_data in new_opportunities:
+        if not db.query(models.EarningOpportunity).filter_by(name=opp_data['name']).first():
+            db.add(models.EarningOpportunity(**opp_data))
+    new_sources = [
+        dict(name='Viajero Millero', source_type='rss_feed', country='ES',
+             url='https://www.viajeromillero.com/feed/', website_url='https://www.viajeromillero.com',
+             is_active=True, priority=8, description='Blog espanol de viajero frecuente. Estrategias y analisis de programas.'),
+        dict(name='Guia Low Cost', source_type='rss_feed', country='ES',
+             url='https://www.guialowcost.es/feed/', website_url='https://www.guialowcost.es',
+             is_active=True, priority=7, description='Deals de viaje y guias Iberia Plus en espanol.'),
+        dict(name='Modo Avion', source_type='rss_feed', country='ES',
+             url='https://modoavion.com/feed/', website_url='https://modoavion.com',
+             is_active=True, priority=7, description='Educacion sobre millas y puntos en espanol.'),
+        dict(name='Proyecto Millas', source_type='rss_feed', country='ES',
+             url='https://proyectomillas.com/feed/', website_url='https://proyectomillas.com',
+             is_active=True, priority=7, description='Comunidad espanola de viajes con millas.'),
+        dict(name='Melhores Destinos', source_type='rss_feed', country='BR',
+             url='https://www.melhoresdestinos.com.br/feed', website_url='https://www.melhoresdestinos.com.br',
+             is_active=True, priority=10, description='Lider absoluto Brasil. Deals, millas, error fares. Lectura diaria obligatoria.'),
+        dict(name='Pontos pra Voar', source_type='rss_feed', country='BR',
+             url='https://pontospravoar.com/feed/', website_url='https://pontospravoar.com',
+             is_active=True, priority=9, description='Alertas rapidas de promos brasilenas. Telegram/WhatsApp activos.'),
+        dict(name='Turning Left for Less', source_type='rss_feed', country='INT',
+             url='https://www.turningleftforless.com/feed/', website_url='https://www.turningleftforless.com',
+             is_active=True, priority=8, description='BA/Iberia Avios y viajes premium europeos. Muy relevante para estrategia Avios.'),
+        dict(name='One Mile at a Time', source_type='rss_feed', country='INT',
+             url='https://onemileatatime.com/feed/', website_url='https://onemileatatime.com',
+             is_active=True, priority=8, description='Guias detalladas de Iberia, BA y premium travel. Referencia mundial.'),
+        dict(name='Frequent Miler', source_type='rss_feed', country='INT',
+             url='https://frequentmiler.com/feed/', website_url='https://frequentmiler.com',
+             is_active=True, priority=7, description='Guia completa de los 7 programas Avios y maximizacion de puntos.'),
+        dict(name='PromoPassagens', source_type='telegram', country='BR',
+             url='https://t.me/promopassagens', website_url=None,
+             is_active=True, priority=9, description='Canal Telegram con promociones de pasajes Brasil.'),
+        dict(name='BECO News', source_type='telegram', country='BR',
+             url='https://t.me/beconews', website_url=None,
+             is_active=True, priority=8, description='Noticias de millas y promociones Brasil.'),
+        dict(name='Barbadas pelo Mundo', source_type='telegram', country='BR',
+             url='https://t.me/barbadasnomundo', website_url=None,
+             is_active=True, priority=9, description='Alertas de error fares y ofertas excepcionales Brasil.'),
+        dict(name='Estevam Pelo Mundo - Alerta Promos', source_type='telegram', country='BR',
+             url='https://t.me/estevampelomundo', website_url=None,
+             is_active=True, priority=8, description='Canal Telegram alertas de promos brasilenas de Estevam Pelo Mundo.'),
+    ]
+    for src_data in new_sources:
+        if not db.query(models.Source).filter_by(name=src_data['name']).first():
+            db.add(models.Source(**src_data))
+    db.commit()
+    print('Full v2 seed complete.')
