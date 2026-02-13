@@ -4,11 +4,43 @@ import { useEffect, useState } from 'react';
 import { recommendationsApi, CreditCard, EarningOpportunity } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
+// Cadenas de conversión por país (estructuras permanentes del PDF)
+const CONVERSION_CHAINS: Record<string, { steps: string[]; result: string; score: number }[]> = {
+  ES: [
+    { steps: ['Gasolina Cepsa', 'Cepsa Más', 'Iberia Club'], result: '2 Avios/litro', score: 90 },
+    { steps: ['Gasolina Repsol', 'Waylet Travel Club', 'Viajes/catálogo'], result: 'Puntos Travel Club', score: 82 },
+    { steps: ['Gasolina Repsol', 'Waylet + Más Renfe', 'Billetes AVE'], result: 'Puntos Renfe', score: 75 },
+    { steps: ['Gasto diario', 'Amex Gold/Platinum ES', 'MR → Iberia/BA'], result: '1 Avios/€', score: 92 },
+    { steps: ['Compras online', 'Iberia Plus Store', 'Iberia Club'], result: '2-10 Avios/€', score: 82 },
+    { steps: ['Duty Free aeropuerto', 'Club Avolta', 'Iberia/BA'], result: '1 Avios/€', score: 80 },
+    { steps: ['Vuelos Vueling/Iberia', 'Iberia Club', 'Canje MAD-GRU'], result: '~50.500 Avios ida biz', score: 95 },
+  ],
+  BR: [
+    { steps: ['Gasolina Petrobras', 'Premmia', 'TudoAzul'], result: '2x en posto premiado', score: 82 },
+    { steps: ['Gasolina Ipiranga', 'Km de Vantagens', 'LATAM Pass / TudoAzul'], result: '1 km/R$ + cashback', score: 78 },
+    { steps: ['Gasolina Shell', 'Shell Box', 'Smiles / TudoAzul'], result: 'Pontos → millas', score: 75 },
+    { steps: ['Tarjeta Santander BR', 'Esfera', 'Iberia Club'], result: '2 Esfera = 1 Avios ★', score: 95 },
+    { steps: ['Tarjeta Itaú/Bradesco', 'Livelo', 'LATAM / Smiles / TudoAzul'], result: '1:1 con bonos 100%', score: 88 },
+    { steps: ['Shopping Livelo/Iupp', 'Campañas 10x', 'Aerolíneas bonificadas'], result: 'Máxima acumulación', score: 88 },
+  ],
+  GI: [
+    { steps: ['Gasolina BP', 'BPme Rewards', 'Avios BA/Iberia'], result: '1-2 pts/litro → Avios', score: 88 },
+    { steps: ['Compras Sainsbury\'s / Esso', 'Nectar Points', 'Avios BA/Iberia'], result: '400 Nectar = 250 Avios', score: 85 },
+    { steps: ['Compras Tesco / Esso', 'Clubcard Points', 'Partners Boost'], result: 'Descuentos/viajes', score: 72 },
+    { steps: ['Tránsito Heathrow', 'Heathrow Rewards', 'Avios BA/Iberia'], result: '1 pto/£1 gastado', score: 80 },
+    { steps: ['Vuelo BA GIB-LHR', 'BA Executive Club', 'Canje vuelos long-haul'], result: '7.250 Avios/vuelo', score: 85 },
+    { steps: ['Gasto diario GIB', 'BA Amex Premium Plus', 'Avios + 2-4-1 voucher'], result: '1.5 Avios/£', score: 88 },
+    { steps: ['Compras online UK', 'BA Avios eStore', 'BA Executive Club'], result: '2-10 Avios/£', score: 82 },
+  ],
+};
+
 export default function Recommendations() {
   const [country, setCountry] = useState('ES');
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [opportunities, setOpportunities] = useState<EarningOpportunity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currencyFilter, setCurrencyFilter] = useState<string>('ALL');
+  const [showChains, setShowChains] = useState(true);
 
   // Calculadora de gasto
   const [monthlySpend, setMonthlySpend] = useState({
@@ -95,8 +127,41 @@ export default function Recommendations() {
       hotels: '🏨',
       supermarket: '🛒',
       pharmacy: '💊',
+      airport: '✈️',
+      transport: '🚆',
     };
     return icons[category] || '📍';
+  };
+
+  // Monedas finales disponibles según las oportunidades cargadas
+  const availableCurrencies = ['ALL', ...Array.from(
+    new Set(opportunities.map(o => o.loyalty_program?.currency).filter(Boolean) as string[])
+  )];
+
+  const filteredOpportunities = currencyFilter === 'ALL'
+    ? opportunities
+    : opportunities.filter(o => o.loyalty_program?.currency === currencyFilter);
+
+  const getCurrencyLabel = (currency: string) => {
+    const labels: Record<string, string> = {
+      ALL: 'Todas',
+      Avios: '✈️ Avios',
+      'Milhas Smiles': '🟠 Smiles',
+      'Milhas LATAM': '🔵 LATAM',
+      'Pontos TudoAzul': '🔷 TudoAzul',
+      'Pontos Livelo': '🟣 Livelo',
+      'Pontos Iupp': '🟡 Iupp',
+      'Pontos Premmia': '🟢 Premmia',
+      Km: '🏁 Km Vantagens',
+      'Puntos Renfe': '🚆 Renfe',
+      'Puntos Travel Club': '🌍 Travel Club',
+      RevPoints: '💜 RevPoints',
+      'BPme Points': '🟩 BPme',
+      'Nectar Points': '🟧 Nectar',
+      'Clubcard Points': '🔴 Clubcard',
+      'Heathrow Points': '🛬 Heathrow',
+    };
+    return labels[currency] || currency;
   };
 
   const getNetworkLogo = (network: string) => {
@@ -283,19 +348,89 @@ export default function Recommendations() {
             </div>
           </div>
 
+          {/* Conversion Chains */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">
+                🔗 Cadenas de Conversión
+              </h3>
+              <button
+                onClick={() => setShowChains(!showChains)}
+                className="text-sm text-primary-600 hover:text-primary-800"
+              >
+                {showChains ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
+            {showChains && (
+              <div className="space-y-2">
+                {(CONVERSION_CHAINS[country] || []).map((chain, idx) => (
+                  <div key={idx} className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-2 flex-wrap">
+                    {chain.steps.map((step, si) => (
+                      <span key={si} className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          si === 0 ? 'bg-gray-100 text-gray-700' :
+                          si === chain.steps.length - 1 ? 'bg-primary-100 text-primary-800' :
+                          'bg-blue-50 text-blue-700'
+                        }`}>{step}</span>
+                        {si < chain.steps.length - 1 && (
+                          <span className="text-gray-400 text-xs">→</span>
+                        )}
+                      </span>
+                    ))}
+                    <span className="ml-auto text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded">
+                      {chain.result}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Earning Opportunities */}
           {opportunities.length > 0 && (
             <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Oportunidades para Ganar Puntos
-              </h3>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 className="text-xl font-bold text-gray-900">
+                  Oportunidades para Ganar Puntos
+                </h3>
+              </div>
+
+              {/* Currency Filter */}
+              {availableCurrencies.length > 2 && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <span className="text-sm text-gray-500 self-center">Filtrar por moneda:</span>
+                  {availableCurrencies.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setCurrencyFilter(c)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        currencyFilter === c
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {getCurrencyLabel(c)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {opportunities.map((opp) => (
-                  <div key={opp.id} className="bg-white rounded-lg shadow p-5">
+                {filteredOpportunities.map((opp) => (
+                  <div key={opp.id} className={`bg-white rounded-lg shadow p-5 ${
+                    opp.recommendation_score >= 85 ? 'ring-1 ring-green-300' : ''
+                  }`}>
                     <div className="flex items-start gap-3">
                       <span className="text-3xl">{getCategoryIcon(opp.category)}</span>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-1">{opp.name}</h4>
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h4 className="font-semibold text-gray-900">{opp.name}</h4>
+                          {opp.loyalty_program?.currency && (
+                            <span className="shrink-0 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                              {opp.loyalty_program.currency}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-primary-600 font-medium mb-2">
                           {opp.earning_description}
                         </p>
