@@ -39,6 +39,15 @@ async def startup_event():
     init_db()
     print("Database initialized")
 
+    # Seed initial data if database is empty
+    from .database import SessionLocal
+    from .seed import run_seed
+    db = SessionLocal()
+    try:
+        run_seed(db)
+    finally:
+        db.close()
+
     # Iniciar scheduler para tareas automáticas
     from .scheduler import start_scheduler
     start_scheduler()
