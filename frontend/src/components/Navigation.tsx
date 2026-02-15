@@ -20,6 +20,7 @@ export default function Navigation() {
 
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: '📊' },
+    { href: '/planner', label: 'Planificador', icon: '🛒' },
     { href: '/recommendations', label: 'Recomendaciones', icon: '💡' },
     { href: '/strategy', label: 'Estrategia', icon: '🗺️' },
     { href: '/promotions', label: 'Promociones', icon: '🎁' },

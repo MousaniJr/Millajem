@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import get_settings
 from .database import init_db
-from .api import programs, balances, calculator, alerts, promotions, recommendations, sources, auth
+from .api import programs, balances, calculator, alerts, promotions, recommendations, sources, auth, planner
 
 settings = get_settings()
 
@@ -31,12 +31,27 @@ app.include_router(alerts.router, prefix="/api")
 app.include_router(promotions.router, prefix="/api")
 app.include_router(recommendations.router, prefix="/api")
 app.include_router(sources.router)
+app.include_router(planner.router, prefix="/api")
+
+
+def _migrate_db():
+    """Run lightweight migrations for existing databases"""
+    from sqlalchemy import inspect, text
+    from .database import engine
+    inspector = inspect(engine)
+    columns = [c['name'] for c in inspector.get_columns('loyalty_programs')]
+    if 'is_enrolled' not in columns:
+        with engine.connect() as conn:
+            conn.execute(text('ALTER TABLE loyalty_programs ADD COLUMN is_enrolled BOOLEAN DEFAULT 0'))
+            conn.commit()
+        print("Migration: added is_enrolled column to loyalty_programs")
 
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize database on startup"""
     init_db()
+    _migrate_db()
     print("Database initialized")
 
     # Seed initial data if database is empty

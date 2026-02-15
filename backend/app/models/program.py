@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, Boolean
 from ..database import Base
 
 
@@ -18,6 +18,9 @@ class LoyaltyProgram(Base):
     # URLs
     website_url = Column(String, nullable=True)
     login_url = Column(String, nullable=True)
+
+    # Enrollment
+    is_enrolled = Column(Boolean, default=False)  # Si el usuario está inscrito en este programa
 
     # Metadata
     notes = Column(String, nullable=True)

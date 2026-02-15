@@ -10,6 +10,7 @@ class LoyaltyProgramBase(BaseModel):
     avios_ratio: Optional[float] = None
     website_url: Optional[str] = None
     login_url: Optional[str] = None
+    is_enrolled: bool = False
     notes: Optional[str] = None
 
 

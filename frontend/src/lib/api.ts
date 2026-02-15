@@ -19,6 +19,7 @@ export interface LoyaltyProgram {
   avios_ratio: number | null;
   website_url: string | null;
   login_url: string | null;
+  is_enrolled: boolean;
   notes: string | null;
 }
 
@@ -43,7 +44,8 @@ export interface ConversionResult {
 
 // API functions
 export const programsApi = {
-  getAll: () => api.get<LoyaltyProgram[]>('/api/programs/'),
+  getAll: (enrolled?: boolean) =>
+    api.get<LoyaltyProgram[]>('/api/programs/', { params: enrolled !== undefined ? { enrolled } : {} }),
   getById: (id: number) => api.get<LoyaltyProgram>(`/api/programs/${id}`),
   create: (data: {
     name: string;
@@ -55,6 +57,8 @@ export const programsApi = {
     login_url?: string;
     notes?: string;
   }) => api.post<LoyaltyProgram>('/api/programs/', data),
+  toggleEnrollment: (id: number) =>
+    api.patch<LoyaltyProgram>(`/api/programs/${id}/toggle-enrollment`),
 };
 
 export const balancesApi = {
@@ -170,4 +174,36 @@ export const recommendationsApi = {
   getTopCards: (country: string, limit?: number) =>
     api.get(`/api/recommendations/top-cards/${country}`, { params: { limit } }),
   getStrategy: (country: string) => api.get(`/api/recommendations/strategy/${country}`),
+};
+
+// Planner types
+export interface StrategyItem {
+  rank: number;
+  opportunity_name: string | null;
+  opportunity_earning_description: string | null;
+  opportunity_points: number;
+  opportunity_how_to_use: string | null;
+  opportunity_program_name: string | null;
+  card_name: string | null;
+  card_bank: string | null;
+  card_points: number;
+  card_earning_rate: number;
+  card_program_name: string | null;
+  total_points: number;
+  avios_equivalent: number;
+  avios_per_euro: number;
+  all_enrolled: boolean;
+  programs_needed: string[];
+}
+
+export interface StrategyResponse {
+  category: string;
+  amount: number;
+  country: string;
+  strategies: StrategyItem[];
+}
+
+export const plannerApi = {
+  getStrategies: (data: { category: string; amount: number; country: string }) =>
+    api.post<StrategyResponse>('/api/planner/strategies', data),
 };
