@@ -1215,6 +1215,7 @@ def run_seed(db: Session):
     seed_uk_gibraltar_additions(db)
     seed_remaining_additions(db)
     seed_full_v2(db)
+    seed_full_v3(db)
     return True
 
 
@@ -1393,3 +1394,319 @@ def seed_full_v2(db):
             db.add(models.Source(**src_data))
     db.commit()
     print('Full v2 seed complete.')
+
+
+def seed_full_v3(db):
+    """v3: Add earning opportunities for all planner categories (supermarkets, restaurants, hotels, rideshare)"""
+    def get_prog(name):
+        p = db.query(models.LoyaltyProgram).filter_by(name=name).first()
+        return p.id if p else None
+
+    # === New loyalty programs for stores ===
+    new_programs = [
+        dict(name='El Corte Inglés Club', currency='Puntos ECI', country='ES', category='shopping',
+             avios_ratio=None, website_url='https://www.elcorteingles.es/',
+             notes='Programa fidelidad El Corte Inglés. Supermercado, moda, electrónica. No convierte a Avios.'),
+        dict(name='Club Carrefour', currency='Puntos Carrefour', country='ES', category='shopping',
+             avios_ratio=None, website_url='https://www.carrefour.es/club-carrefour/',
+             notes='Programa fidelidad Carrefour España. Descuentos en gasolina y compras. No convierte a Avios.'),
+        dict(name='TheFork Yums', currency='Yums', country='ES', category='dining',
+             avios_ratio=None, website_url='https://www.thefork.es/',
+             notes='Programa de reservas de restaurantes. Acumula Yums canjeables por descuentos. No Avios.'),
+        dict(name='NH Rewards', currency='NH Points', country='INT', category='hotel',
+             avios_ratio=None, website_url='https://www.nh-hotels.com/rewards',
+             notes='Programa NH Hotel Group. Presencia en España, Brasil y Europa. No convierte a Avios.'),
+        dict(name='Meliá Rewards', currency='MeliáRewards Points', country='ES', category='hotel',
+             avios_ratio=None, website_url='https://www.melia.com/es/meliarewards',
+             notes='Programa Meliá Hotels International. Fuerte presencia España y Caribe. No convierte directamente a Avios.'),
+        dict(name='Stix (GPA)', currency='Stix', country='BR', category='shopping',
+             avios_ratio=None, website_url='https://www.stix.com.br/',
+             notes='Programa fidelidad Pão de Açúcar, Extra, Droga Raia. Intercambia con Livelo.'),
+        dict(name='Lidl Plus', currency='Descuentos', country='ES', category='shopping',
+             avios_ratio=None, website_url='https://www.lidl.es/lidl-plus',
+             notes='App Lidl Plus con cupones y cashback. Solo descuentos, no puntos convertibles.'),
+    ]
+    for prog_data in new_programs:
+        if not db.query(models.LoyaltyProgram).filter_by(name=prog_data['name']).first():
+            db.add(models.LoyaltyProgram(**prog_data))
+    db.commit()
+
+    # Get program IDs
+    iberia_id = get_prog('Iberia Club')
+    ba_id = get_prog('British Airways Executive Club')
+    amex_mr_id = get_prog('American Express Membership Rewards ES')
+    livelo_id = get_prog('Livelo')
+    esfera_id = get_prog('Esfera Santander')
+    accor_id = get_prog('Accor Live Limitless')
+    marriott_id = get_prog('Marriott Bonvoy')
+    ihg_id = get_prog('IHG One Rewards')
+    hilton_id = get_prog('Hilton Honors')
+    eci_id = get_prog('El Corte Inglés Club')
+    carrefour_id = get_prog('Club Carrefour')
+    thefork_id = get_prog('TheFork Yums')
+    nh_id = get_prog('NH Rewards')
+    melia_id = get_prog('Meliá Rewards')
+    stix_id = get_prog('Stix (GPA)')
+    lidl_id = get_prog('Lidl Plus')
+
+    new_opportunities = [
+        # ===== ESPAÑA — SUPERMERCADOS =====
+        dict(name='El Corte Inglés Supermercado — Iberia Plus Store',
+             category='supermarkets', country='ES',
+             loyalty_program_id=iberia_id, earning_rate=1.0,
+             earning_description='1 Avios/€ comprando en El Corte Inglés via Iberia Plus Store',
+             how_to_use='Accede a El Corte Inglés a través del portal Iberia Plus Store antes de comprar online.',
+             requirements='Cuenta Iberia Club',
+             signup_url='https://www.iberia.com/es/iberia-plus/shopping/',
+             notes='Compras online en El Corte Inglés acumulando Avios vía portal.',
+             is_active=True, recommendation_score=80),
+        dict(name='El Corte Inglés Supermercado — Club ECI',
+             category='supermarkets', country='ES',
+             loyalty_program_id=eci_id, earning_rate=1.0,
+             earning_description='Puntos ECI por compras en supermercado El Corte Inglés',
+             how_to_use='Presenta tu tarjeta Club ECI al pagar en supermercados El Corte Inglés.',
+             requirements='Tarjeta Club El Corte Inglés (gratuita)',
+             signup_url='https://www.elcorteingles.es/',
+             notes='Puntos canjeables por descuentos. Compatible con pagar con tarjeta Avios.',
+             is_active=True, recommendation_score=60),
+        dict(name='Carrefour España — Club Carrefour',
+             category='supermarkets', country='ES',
+             loyalty_program_id=carrefour_id, earning_rate=1.0,
+             earning_description='Puntos Club Carrefour + descuentos en gasolina Carrefour',
+             how_to_use='Usa la app o tarjeta Club Carrefour al pagar. Descuento en gasolinera Carrefour.',
+             requirements='Tarjeta Club Carrefour (gratuita)',
+             signup_url='https://www.carrefour.es/club-carrefour/',
+             notes='Descuentos acumulables. Compatible con pagar con tarjeta Avios.',
+             is_active=True, recommendation_score=55),
+        dict(name='Lidl Plus España',
+             category='supermarkets', country='ES',
+             loyalty_program_id=lidl_id, earning_rate=0.5,
+             earning_description='Cupones y cashback vía app Lidl Plus',
+             how_to_use='Descarga la app Lidl Plus y escanea al pagar.',
+             requirements='App Lidl Plus',
+             signup_url='https://www.lidl.es/lidl-plus',
+             notes='Solo cashback y cupones, no puntos convertibles. Precios ya bajos.',
+             is_active=True, recommendation_score=45),
+        dict(name='Mercadona — Solo tarjeta',
+             category='supermarkets', country='ES',
+             loyalty_program_id=None, earning_rate=0.0,
+             earning_description='Sin programa de fidelidad propio. Usa tarjeta Avios para acumular.',
+             how_to_use='Paga con tu tarjeta AmEx o Iberia Visa para acumular puntos de la tarjeta.',
+             requirements=None,
+             notes='Mercadona no tiene programa de puntos. Acumulas solo vía tarjeta de crédito.',
+             is_active=True, recommendation_score=50),
+
+        # ===== ESPAÑA — RESTAURANTES =====
+        dict(name='TheFork (ElTenedor) — Yums',
+             category='restaurants', country='ES',
+             loyalty_program_id=thefork_id, earning_rate=1.0,
+             earning_description='Yums por reservar y cenar en restaurantes TheFork',
+             how_to_use='Reserva restaurantes a través de TheFork/ElTenedor. Acumulas Yums automáticamente.',
+             requirements='Cuenta TheFork',
+             signup_url='https://www.thefork.es/',
+             notes='1000 Yums = descuento en cena. No convierte a Avios, pero complementa con tarjeta.',
+             is_active=True, recommendation_score=55),
+        dict(name='Iberia Plus Dining — Restaurantes partner',
+             category='restaurants', country='ES',
+             loyalty_program_id=iberia_id, earning_rate=1.0,
+             earning_description='1 Avios/€ en restaurantes partner Iberia Plus',
+             how_to_use='Consulta restaurantes partner en iberia.com/partners y presenta tu número Iberia Plus.',
+             requirements='Cuenta Iberia Club',
+             signup_url='https://www.iberia.com/es/iberia-plus/partners/',
+             notes='Red limitada pero directa. Combinable con tarjeta AmEx para doble acumulación.',
+             is_active=True, recommendation_score=75),
+        dict(name='Uber Eats España — AmEx Offers',
+             category='restaurants', country='ES',
+             loyalty_program_id=amex_mr_id, earning_rate=2.0,
+             earning_description='2 MR/€ vía AmEx Offers en Uber Eats (cuando disponible)',
+             how_to_use='Activa la oferta Uber Eats en tu app AmEx antes de pedir.',
+             requirements='Tarjeta AmEx España',
+             signup_url='https://www.americanexpress.com/es/',
+             notes='Ofertas rotativas. Cuando está activa, 2x puntos. Verificar disponibilidad.',
+             is_active=True, recommendation_score=70),
+
+        # ===== ESPAÑA — HOTELES =====
+        dict(name='Marriott Bonvoy España — Reserva directa',
+             category='hotels', country='ES',
+             loyalty_program_id=marriott_id, earning_rate=1.0,
+             earning_description='Puntos Marriott por noche (60K = 25K Avios)',
+             how_to_use='Reserva directamente en marriott.com con tu cuenta Bonvoy.',
+             requirements='Cuenta Marriott Bonvoy (gratuita)',
+             signup_url='https://www.marriott.com/loyalty/',
+             notes='Ratio bajo a Avios pero buena red en España. AC Hotels, Renaissance, W.',
+             is_active=True, recommendation_score=65),
+        dict(name='NH Hotels — NH Rewards',
+             category='hotels', country='ES',
+             loyalty_program_id=nh_id, earning_rate=1.0,
+             earning_description='Puntos NH Rewards por reserva directa',
+             how_to_use='Reserva en nh-hotels.com con tu cuenta NH Rewards.',
+             requirements='Cuenta NH Rewards (gratuita)',
+             signup_url='https://www.nh-hotels.com/rewards',
+             notes='Muchos hoteles en España. No convierte a Avios. Canjeable por noches gratis.',
+             is_active=True, recommendation_score=50),
+        dict(name='Meliá Hotels — MeliáRewards',
+             category='hotels', country='ES',
+             loyalty_program_id=melia_id, earning_rate=1.0,
+             earning_description='MeliáRewards Points por reserva directa',
+             how_to_use='Reserva en melia.com con tu cuenta MeliáRewards.',
+             requirements='Cuenta MeliáRewards (gratuita)',
+             signup_url='https://www.melia.com/es/meliarewards',
+             notes='Cadena española. Sol, Tryp, Paradisus. No convierte a Avios.',
+             is_active=True, recommendation_score=50),
+
+        # ===== BRASIL — SUPERMERCADOS =====
+        dict(name='Pão de Açúcar / Extra — Stix + Livelo',
+             category='supermarkets', country='BR',
+             loyalty_program_id=livelo_id, earning_rate=1.0,
+             earning_description='Pontos Livelo/Stix por compras en Pão de Açúcar y Extra',
+             how_to_use='Vincula tu cuenta Stix/Livelo al CPF y compra en Pão de Açúcar o Extra.',
+             requirements='CPF + cuenta Stix/Livelo',
+             signup_url='https://www.stix.com.br/',
+             notes='Stix intercambia con Livelo. Livelo transfiere 1:1 a aerolíneas con bonos.',
+             is_active=True, recommendation_score=75),
+        dict(name='Carrefour Brasil — Programa propio',
+             category='supermarkets', country='BR',
+             loyalty_program_id=None, earning_rate=0.5,
+             earning_description='Descuentos exclusivos socios Carrefour Brasil',
+             how_to_use='Usa el cartão Carrefour o app para descuentos exclusivos.',
+             requirements='Cartão Carrefour',
+             signup_url='https://www.carrefour.com.br/',
+             notes='Programa propio de descuentos. No convierte a millas. Usa tarjeta Esfera/Livelo para acumular.',
+             is_active=True, recommendation_score=40),
+
+        # ===== BRASIL — RESTAURANTES =====
+        dict(name='iFood — Partner Livelo',
+             category='restaurants', country='BR',
+             loyalty_program_id=livelo_id, earning_rate=2.0,
+             earning_description='Até 2 Pontos Livelo/R$ em pedidos iFood',
+             how_to_use='Vincule sua conta Livelo ao iFood na app. Pontos acumulados automaticamente.',
+             requirements='CPF + conta Livelo + app iFood',
+             signup_url='https://www.livelo.com.br/',
+             notes='Campañas frecuentes hasta 10x puntos. Principal app delivery Brasil.',
+             is_active=True, recommendation_score=80),
+        dict(name='Rappi Brasil — Partner Livelo',
+             category='restaurants', country='BR',
+             loyalty_program_id=livelo_id, earning_rate=1.0,
+             earning_description='Pontos Livelo por pedidos en Rappi',
+             how_to_use='Vincule Livelo con Rappi para acumular pontos.',
+             requirements='CPF + conta Livelo',
+             signup_url='https://www.livelo.com.br/',
+             notes='Alternativa a iFood. Campañas esporádicas con bonus Livelo.',
+             is_active=True, recommendation_score=65),
+
+        # ===== BRASIL — HOTELES =====
+        dict(name='Accor ALL Brasil — Reserva directa',
+             category='hotels', country='BR',
+             loyalty_program_id=accor_id, earning_rate=1.0,
+             earning_description='Pontos ALL por noches en Accor Brasil (1:1 a Avios)',
+             how_to_use='Reserve en all.accor.com con sua conta ALL. Hoteis: Ibis, Novotel, Pullman, Sofitel.',
+             requirements='Conta Accor ALL (gratuita)',
+             signup_url='https://all.accor.com/',
+             notes='Mejor ratio hotel→Avios (1:1). Amplia red en Brasil.',
+             is_active=True, recommendation_score=90),
+        dict(name='Marriott Bonvoy Brasil — Reserva directa',
+             category='hotels', country='BR',
+             loyalty_program_id=marriott_id, earning_rate=1.0,
+             earning_description='Pontos Marriott por noche (60K = 25K Avios)',
+             how_to_use='Reserve en marriott.com con conta Bonvoy.',
+             requirements='Conta Marriott Bonvoy (gratuita)',
+             signup_url='https://www.marriott.com/loyalty/',
+             notes='Renaissance, JW Marriott São Paulo. Ratio bajo pero buena red.',
+             is_active=True, recommendation_score=65),
+        dict(name='Booking.com Brasil — via Livelo',
+             category='hotels', country='BR',
+             loyalty_program_id=livelo_id, earning_rate=1.0,
+             earning_description='Pontos Livelo por reservas Booking.com vía portal Livelo',
+             how_to_use='Acesse Booking.com pelo portal de compras Livelo.',
+             requirements='CPF + conta Livelo',
+             signup_url='https://www.livelo.com.br/',
+             notes='Acumula Livelo que transfiere 1:1 a aerolíneas. Campañas con bonus.',
+             is_active=True, recommendation_score=75),
+
+        # ===== BRASIL — RIDESHARE/TRANSPORTE =====
+        dict(name='Uber Brasil — Partner Livelo',
+             category='rideshare', country='BR',
+             loyalty_program_id=livelo_id, earning_rate=1.0,
+             earning_description='Pontos Livelo por corridas Uber',
+             how_to_use='Vincule sua conta Livelo ao Uber na app Livelo.',
+             requirements='CPF + conta Livelo',
+             signup_url='https://www.livelo.com.br/',
+             notes='Acumula Livelo en viajes diarios. Transfiere a aerolíneas.',
+             is_active=True, recommendation_score=75),
+        dict(name='99 (DiDi) Brasil — Partner Livelo',
+             category='rideshare', country='BR',
+             loyalty_program_id=livelo_id, earning_rate=1.0,
+             earning_description='Pontos Livelo por corridas 99/DiDi',
+             how_to_use='Vincule Livelo con 99 para acumular pontos.',
+             requirements='CPF + conta Livelo',
+             signup_url='https://www.livelo.com.br/',
+             notes='Alternativa a Uber en Brasil. Campañas ocasionales de bonus.',
+             is_active=True, recommendation_score=65),
+
+        # ===== GIBRALTAR/UK — HOTELES =====
+        dict(name='Accor ALL UK/Gibraltar — Reserva directa',
+             category='hotels', country='GI',
+             loyalty_program_id=accor_id, earning_rate=1.0,
+             earning_description='ALL Points por noches (1:1 a Avios)',
+             how_to_use='Book on all.accor.com with your ALL account.',
+             requirements='Accor ALL account (free)',
+             signup_url='https://all.accor.com/',
+             notes='Best hotel-to-Avios ratio (1:1). Ibis, Novotel, Sofitel in UK.',
+             is_active=True, recommendation_score=90),
+        dict(name='Marriott Bonvoy UK — Reserva directa',
+             category='hotels', country='GI',
+             loyalty_program_id=marriott_id, earning_rate=1.0,
+             earning_description='Marriott Points per night (60K = 25K Avios)',
+             how_to_use='Book on marriott.com with Bonvoy account.',
+             requirements='Marriott Bonvoy account (free)',
+             signup_url='https://www.marriott.com/loyalty/',
+             notes='Good UK presence. Low Avios ratio but wide network.',
+             is_active=True, recommendation_score=65),
+        dict(name='IHG One Rewards UK — Reserva directa',
+             category='hotels', country='GI',
+             loyalty_program_id=ihg_id, earning_rate=1.0,
+             earning_description='IHG Points per night',
+             how_to_use='Book on ihg.com with One Rewards account.',
+             requirements='IHG One Rewards account (free)',
+             signup_url='https://www.ihg.com/onerewards',
+             notes='Holiday Inn, InterContinental. Good UK presence. ~5:1 to Avios.',
+             is_active=True, recommendation_score=55),
+
+        # ===== GIBRALTAR/UK — RESTAURANTES =====
+        dict(name='BA Avios Dining — eStore restaurants',
+             category='restaurants', country='GI',
+             loyalty_program_id=ba_id, earning_rate=1.0,
+             earning_description='Avios per £ at BA dining partners',
+             how_to_use='Check BA Avios eStore for dining partners. Link your Executive Club number.',
+             requirements='BA Executive Club account',
+             signup_url='https://www.britishairways.com/es-es/executive-club',
+             notes='Limited network but earns Avios directly. Combine with Avios credit card.',
+             is_active=True, recommendation_score=70),
+
+        # ===== INTERNATIONAL — HOTELES (expand) =====
+        dict(name='IHG One Rewards — Reserva global',
+             category='hotels', country='INT',
+             loyalty_program_id=ihg_id, earning_rate=1.0,
+             earning_description='IHG Points por noche (~5:1 a Avios)',
+             how_to_use='Reserva en ihg.com con tu cuenta One Rewards.',
+             requirements='Cuenta IHG One Rewards (gratuita)',
+             signup_url='https://www.ihg.com/onerewards',
+             notes='Holiday Inn, InterContinental, Hotel Indigo. Buena red global.',
+             is_active=True, recommendation_score=60),
+        dict(name='Hilton Honors — Reserva global',
+             category='hotels', country='INT',
+             loyalty_program_id=hilton_id, earning_rate=1.0,
+             earning_description='Hilton Points por noche (~10:1 a Avios vía BA)',
+             how_to_use='Reserva en hilton.com con tu cuenta Honors.',
+             requirements='Cuenta Hilton Honors (gratuita)',
+             signup_url='https://www.hilton.com/honors',
+             notes='Ratio bajo a Avios pero 5ª noche gratis en canjes. Útil en USA/Asia.',
+             is_active=True, recommendation_score=55),
+    ]
+
+    for opp_data in new_opportunities:
+        if not db.query(models.EarningOpportunity).filter_by(name=opp_data['name']).first():
+            db.add(models.EarningOpportunity(**opp_data))
+
+    db.commit()
+    print('Full v3 seed complete: Added earning opportunities for supermarkets, restaurants, hotels, rideshare.')
