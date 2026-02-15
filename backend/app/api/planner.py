@@ -205,6 +205,33 @@ def get_strategies(request: StrategyRequest, db: Session = Depends(get_db)):
             programs_needed=programs_needed,
         ))
 
+    # Deduplicate: for each opportunity, keep only the best card (highest avios_per_euro or total_points)
+    best_by_opportunity: dict[str, StrategyItem] = {}
+    best_card_only: StrategyItem | None = None
+
+    for s in strategies:
+        if s.opportunity_name:
+            key = s.opportunity_name
+            existing = best_by_opportunity.get(key)
+            if existing is None:
+                best_by_opportunity[key] = s
+            else:
+                # Prefer higher avios_per_euro, then higher total_points
+                if (s.avios_per_euro > existing.avios_per_euro) or \
+                   (s.avios_per_euro == existing.avios_per_euro and s.total_points > existing.total_points):
+                    best_by_opportunity[key] = s
+        else:
+            # Card-only: keep the best one
+            if best_card_only is None:
+                best_card_only = s
+            elif (s.avios_per_euro > best_card_only.avios_per_euro) or \
+                 (s.avios_per_euro == best_card_only.avios_per_euro and s.total_points > best_card_only.total_points):
+                best_card_only = s
+
+    strategies = list(best_by_opportunity.values())
+    if best_card_only:
+        strategies.append(best_card_only)
+
     # Sort: redeemable opportunities first, then Avios-redeemable, then enrolled, then by avios_per_euro
     strategies.sort(key=lambda s: (
         -int(s.opportunity_earns_redeemable),  # Redeemable opportunities first
