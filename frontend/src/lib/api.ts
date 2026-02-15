@@ -177,6 +177,17 @@ export const recommendationsApi = {
 };
 
 // Planner types
+export interface PaymentOption {
+  card_name: string;
+  card_bank: string;
+  card_points: number;
+  card_earning_rate: number;
+  card_program_name: string | null;
+  total_avios: number;
+  avios_per_euro: number;
+  programs_needed: string[];
+}
+
 export interface StrategyItem {
   rank: number;
   opportunity_name: string | null;
@@ -184,19 +195,12 @@ export interface StrategyItem {
   opportunity_points: number;
   opportunity_how_to_use: string | null;
   opportunity_program_name: string | null;
-  card_name: string | null;
-  card_bank: string | null;
-  card_points: number;
-  card_earning_rate: number;
-  card_program_name: string | null;
-  total_points: number;
-  avios_equivalent: number;
-  avios_per_euro: number;
   is_avios_redeemable: boolean;
   opportunity_earns_redeemable: boolean;
   earning_currency: string | null;
-  all_enrolled: boolean;
-  programs_needed: string[];
+  payment_options: PaymentOption[];
+  best_avios_per_euro: number;
+  best_total_avios: number;
 }
 
 export interface StrategyResponse {

@@ -16,6 +16,17 @@ class StrategyRequest(BaseModel):
     country: str  # "ES", "BR", "GI"
 
 
+class PaymentOption(BaseModel):
+    card_name: str
+    card_bank: str
+    card_points: float
+    card_earning_rate: float
+    card_program_name: Optional[str] = None
+    total_avios: float
+    avios_per_euro: float
+    programs_needed: List[str]
+
+
 class StrategyItem(BaseModel):
     rank: int
     # Earning opportunity info
@@ -24,23 +35,15 @@ class StrategyItem(BaseModel):
     opportunity_points: float
     opportunity_how_to_use: Optional[str] = None
     opportunity_program_name: Optional[str] = None
-    # Card info
-    card_name: Optional[str] = None
-    card_bank: Optional[str] = None
-    card_points: float
-    card_earning_rate: float
-    card_program_name: Optional[str] = None
-    # Totals
-    total_points: float
-    avios_equivalent: float
-    avios_per_euro: float
     # Avios redeemability
-    is_avios_redeemable: bool  # True if points can be converted to Avios
-    opportunity_earns_redeemable: bool  # True if the opportunity itself earns redeemable points (not cash/saldo)
-    earning_currency: Optional[str] = None  # Currency name for non-Avios (e.g. "Pontos Livelo")
-    # Enrollment status
-    all_enrolled: bool  # True if user is enrolled in all required programs
-    programs_needed: List[str]  # Programs not yet enrolled
+    is_avios_redeemable: bool
+    opportunity_earns_redeemable: bool
+    earning_currency: Optional[str] = None
+    # Payment options (sorted best to worst)
+    payment_options: List[PaymentOption]
+    # Best option summary
+    best_avios_per_euro: float
+    best_total_avios: float
 
 
 class StrategyResponse(BaseModel):
@@ -54,7 +57,6 @@ class StrategyResponse(BaseModel):
 def get_strategies(request: StrategyRequest, db: Session = Depends(get_db)):
     """Get ranked earning strategies for a planned purchase"""
 
-    # Map category aliases for bonus_categories matching
     category_aliases = {
         "hotel": ["hotels", "hotel", "travel"],
         "fuel": ["fuel"],
@@ -80,109 +82,119 @@ def get_strategies(request: StrategyRequest, db: Session = Depends(get_db)):
         models.CreditCard.is_available == True,
     ).all()
 
-    # 3. Get all loyalty programs for enrollment check
+    # 3. Get all loyalty programs
     programs = {p.id: p for p in db.query(models.LoyaltyProgram).all()}
 
-    strategies = []
-
-    # Generate strategies: each opportunity + each card combo
-    for opp in opportunities:
-        opp_program = programs.get(opp.loyalty_program_id)
-        opp_points = opp.earning_rate * request.amount
-
-        for card in cards:
-            card_program = programs.get(card.loyalty_program_id)
-
-            # Calculate card earning rate for this category
-            card_rate = card.base_earning_rate
-            if card.bonus_categories:
-                try:
-                    bonus = json.loads(card.bonus_categories)
-                    for alias in aliases:
-                        if alias in bonus:
-                            card_rate = max(card_rate, bonus[alias])
-                            break
-                except (json.JSONDecodeError, TypeError):
-                    pass
-
-            card_points = card_rate * request.amount
-
-            # Calculate Avios equivalent
-            opp_avios = opp_points * (opp_program.avios_ratio if opp_program and opp_program.avios_ratio else 0)
-            card_avios = card_points * (card_program.avios_ratio if card_program and card_program.avios_ratio else 0)
-            total_avios = opp_avios + card_avios
-            is_avios_redeemable = total_avios > 0
-            # Does the opportunity ITSELF earn redeemable points (not cash/saldo)?
-            opportunity_earns_redeemable = bool(opp_program and opp_program.avios_ratio and opp_program.avios_ratio > 0)
-
-            avios_per_euro = total_avios / request.amount if request.amount > 0 and total_avios > 0 else 0
-
-            # Determine earning currency for non-Avios strategies
-            earning_currency = None
-            if not is_avios_redeemable:
-                if opp_program:
-                    earning_currency = opp_program.currency
-                elif card_program:
-                    earning_currency = card_program.currency
-
-            # Check enrollment
-            programs_needed = []
-            if opp_program and not opp_program.is_enrolled:
-                programs_needed.append(opp_program.name)
-            if card_program and not card_program.is_enrolled and (not opp_program or card_program.id != opp_program.id):
-                programs_needed.append(card_program.name)
-
-            strategies.append(StrategyItem(
-                rank=0,
-                opportunity_name=opp.name,
-                opportunity_earning_description=opp.earning_description,
-                opportunity_points=round(opp_points, 1),
-                opportunity_how_to_use=opp.how_to_use,
-                opportunity_program_name=opp_program.name if opp_program else None,
-                card_name=card.name,
-                card_bank=card.bank,
-                card_points=round(card_points, 1),
-                card_earning_rate=card_rate,
-                card_program_name=card_program.name if card_program else None,
-                total_points=round(opp_points + card_points, 1),
-                avios_equivalent=round(total_avios, 1),
-                avios_per_euro=round(avios_per_euro, 2),
-                is_avios_redeemable=is_avios_redeemable,
-                opportunity_earns_redeemable=opportunity_earns_redeemable,
-                earning_currency=earning_currency,
-                all_enrolled=len(programs_needed) == 0,
-                programs_needed=programs_needed,
-            ))
-
-    # Also add card-only strategies (no earning opportunity, just paying with a card)
-    for card in cards:
-        card_program = programs.get(card.loyalty_program_id)
-
-        card_rate = card.base_earning_rate
+    def calc_card_rate(card, aliases):
+        rate = card.base_earning_rate
         if card.bonus_categories:
             try:
                 bonus = json.loads(card.bonus_categories)
                 for alias in aliases:
                     if alias in bonus:
-                        card_rate = max(card_rate, bonus[alias])
+                        rate = max(rate, bonus[alias])
                         break
             except (json.JSONDecodeError, TypeError):
                 pass
+        return rate
 
-        card_points = card_rate * request.amount
-        card_avios = card_points * (card_program.avios_ratio if card_program and card_program.avios_ratio else 0)
-        is_avios_redeemable = card_avios > 0
+    strategies = []
 
-        avios_per_euro = card_avios / request.amount if request.amount > 0 and card_avios > 0 else 0
+    # Generate strategies: one per opportunity, with all card options inside
+    for opp in opportunities:
+        opp_program = programs.get(opp.loyalty_program_id)
+        opp_points = opp.earning_rate * request.amount
+        opp_avios = opp_points * (opp_program.avios_ratio if opp_program and opp_program.avios_ratio else 0)
+        opportunity_earns_redeemable = bool(opp_program and opp_program.avios_ratio and opp_program.avios_ratio > 0)
 
         earning_currency = None
-        if not is_avios_redeemable and card_program:
-            earning_currency = card_program.currency
+        if not opportunity_earns_redeemable and opp_program:
+            earning_currency = opp_program.currency
 
-        programs_needed = []
+        payment_options = []
+        for card in cards:
+            card_program = programs.get(card.loyalty_program_id)
+            card_rate = calc_card_rate(card, aliases)
+            card_points = card_rate * request.amount
+            card_avios = card_points * (card_program.avios_ratio if card_program and card_program.avios_ratio else 0)
+            total_avios = opp_avios + card_avios
+            avios_per_euro = total_avios / request.amount if request.amount > 0 and total_avios > 0 else 0
+
+            progs_needed = []
+            if opp_program and not opp_program.is_enrolled:
+                progs_needed.append(opp_program.name)
+            if card_program and not card_program.is_enrolled and (not opp_program or card_program.id != opp_program.id):
+                progs_needed.append(card_program.name)
+
+            payment_options.append(PaymentOption(
+                card_name=card.name,
+                card_bank=card.bank,
+                card_points=round(card_points, 1),
+                card_earning_rate=card_rate,
+                card_program_name=card_program.name if card_program else None,
+                total_avios=round(total_avios, 1),
+                avios_per_euro=round(avios_per_euro, 2),
+                programs_needed=progs_needed,
+            ))
+
+        # Sort payment options: highest avios_per_euro first
+        payment_options.sort(key=lambda p: (-p.avios_per_euro, -p.total_avios))
+
+        # Filter out cards with 0 avios if there are better options
+        if any(p.avios_per_euro > 0 for p in payment_options):
+            payment_options = [p for p in payment_options if p.avios_per_euro > 0]
+
+        if not payment_options:
+            continue
+
+        best = payment_options[0]
+        is_avios_redeemable = best.total_avios > 0
+
+        strategies.append(StrategyItem(
+            rank=0,
+            opportunity_name=opp.name,
+            opportunity_earning_description=opp.earning_description,
+            opportunity_points=round(opp_points, 1),
+            opportunity_how_to_use=opp.how_to_use,
+            opportunity_program_name=opp_program.name if opp_program else None,
+            is_avios_redeemable=is_avios_redeemable,
+            opportunity_earns_redeemable=opportunity_earns_redeemable,
+            earning_currency=earning_currency,
+            payment_options=payment_options,
+            best_avios_per_euro=best.avios_per_euro,
+            best_total_avios=best.total_avios,
+        ))
+
+    # Add a card-only strategy (no opportunity, just best cards)
+    card_only_options = []
+    for card in cards:
+        card_program = programs.get(card.loyalty_program_id)
+        card_rate = calc_card_rate(card, aliases)
+        card_points = card_rate * request.amount
+        card_avios = card_points * (card_program.avios_ratio if card_program and card_program.avios_ratio else 0)
+        avios_per_euro = card_avios / request.amount if request.amount > 0 and card_avios > 0 else 0
+
+        progs_needed = []
         if card_program and not card_program.is_enrolled:
-            programs_needed.append(card_program.name)
+            progs_needed.append(card_program.name)
 
+        card_only_options.append(PaymentOption(
+            card_name=card.name,
+            card_bank=card.bank,
+            card_points=round(card_points, 1),
+            card_earning_rate=card_rate,
+            card_program_name=card_program.name if card_program else None,
+            total_avios=round(card_avios, 1),
+            avios_per_euro=round(avios_per_euro, 2),
+            programs_needed=progs_needed,
+        ))
+
+    card_only_options.sort(key=lambda p: (-p.avios_per_euro, -p.total_avios))
+    if any(p.avios_per_euro > 0 for p in card_only_options):
+        card_only_options = [p for p in card_only_options if p.avios_per_euro > 0]
+
+    if card_only_options:
+        best = card_only_options[0]
         strategies.append(StrategyItem(
             rank=0,
             opportunity_name=None,
@@ -190,58 +202,22 @@ def get_strategies(request: StrategyRequest, db: Session = Depends(get_db)):
             opportunity_points=0,
             opportunity_how_to_use=None,
             opportunity_program_name=None,
-            card_name=card.name,
-            card_bank=card.bank,
-            card_points=round(card_points, 1),
-            card_earning_rate=card_rate,
-            card_program_name=card_program.name if card_program else None,
-            total_points=round(card_points, 1),
-            avios_equivalent=round(card_avios, 1),
-            avios_per_euro=round(avios_per_euro, 2),
-            is_avios_redeemable=is_avios_redeemable,
-            opportunity_earns_redeemable=True,  # Card-only: no non-redeemable opportunity
-            earning_currency=earning_currency,
-            all_enrolled=len(programs_needed) == 0,
-            programs_needed=programs_needed,
+            is_avios_redeemable=best.total_avios > 0,
+            opportunity_earns_redeemable=True,
+            earning_currency=None,
+            payment_options=card_only_options,
+            best_avios_per_euro=best.avios_per_euro,
+            best_total_avios=best.total_avios,
         ))
 
-    # Deduplicate: for each opportunity, keep only the best card (highest avios_per_euro or total_points)
-    best_by_opportunity: dict[str, StrategyItem] = {}
-    best_card_only: StrategyItem | None = None
-
-    for s in strategies:
-        if s.opportunity_name:
-            key = s.opportunity_name
-            existing = best_by_opportunity.get(key)
-            if existing is None:
-                best_by_opportunity[key] = s
-            else:
-                # Prefer higher avios_per_euro, then higher total_points
-                if (s.avios_per_euro > existing.avios_per_euro) or \
-                   (s.avios_per_euro == existing.avios_per_euro and s.total_points > existing.total_points):
-                    best_by_opportunity[key] = s
-        else:
-            # Card-only: keep the best one
-            if best_card_only is None:
-                best_card_only = s
-            elif (s.avios_per_euro > best_card_only.avios_per_euro) or \
-                 (s.avios_per_euro == best_card_only.avios_per_euro and s.total_points > best_card_only.total_points):
-                best_card_only = s
-
-    strategies = list(best_by_opportunity.values())
-    if best_card_only:
-        strategies.append(best_card_only)
-
-    # Sort: redeemable opportunities first, then Avios-redeemable, then enrolled, then by avios_per_euro
+    # Sort strategies
     strategies.sort(key=lambda s: (
-        -int(s.opportunity_earns_redeemable),  # Redeemable opportunities first
+        -int(s.opportunity_earns_redeemable),
         -int(s.is_avios_redeemable),
-        -int(s.all_enrolled),
-        -s.avios_per_euro if s.is_avios_redeemable else 0,
-        -s.total_points if not s.is_avios_redeemable else 0,
+        -s.best_avios_per_euro,
+        -s.best_total_avios,
     ))
 
-    # Assign ranks
     for i, s in enumerate(strategies):
         s.rank = i + 1
 
