@@ -193,6 +193,7 @@ export interface StrategyItem {
   avios_equivalent: number;
   avios_per_euro: number;
   is_avios_redeemable: boolean;
+  opportunity_earns_redeemable: boolean;
   earning_currency: string | null;
   all_enrolled: boolean;
   programs_needed: string[];

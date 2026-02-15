@@ -36,6 +36,7 @@ class StrategyItem(BaseModel):
     avios_per_euro: float
     # Avios redeemability
     is_avios_redeemable: bool  # True if points can be converted to Avios
+    opportunity_earns_redeemable: bool  # True if the opportunity itself earns redeemable points (not cash/saldo)
     earning_currency: Optional[str] = None  # Currency name for non-Avios (e.g. "Pontos Livelo")
     # Enrollment status
     all_enrolled: bool  # True if user is enrolled in all required programs
@@ -111,6 +112,8 @@ def get_strategies(request: StrategyRequest, db: Session = Depends(get_db)):
             card_avios = card_points * (card_program.avios_ratio if card_program and card_program.avios_ratio else 0)
             total_avios = opp_avios + card_avios
             is_avios_redeemable = total_avios > 0
+            # Does the opportunity ITSELF earn redeemable points (not cash/saldo)?
+            opportunity_earns_redeemable = bool(opp_program and opp_program.avios_ratio and opp_program.avios_ratio > 0)
 
             avios_per_euro = total_avios / request.amount if request.amount > 0 and total_avios > 0 else 0
 
@@ -145,6 +148,7 @@ def get_strategies(request: StrategyRequest, db: Session = Depends(get_db)):
                 avios_equivalent=round(total_avios, 1),
                 avios_per_euro=round(avios_per_euro, 2),
                 is_avios_redeemable=is_avios_redeemable,
+                opportunity_earns_redeemable=opportunity_earns_redeemable,
                 earning_currency=earning_currency,
                 all_enrolled=len(programs_needed) == 0,
                 programs_needed=programs_needed,
@@ -195,13 +199,15 @@ def get_strategies(request: StrategyRequest, db: Session = Depends(get_db)):
             avios_equivalent=round(card_avios, 1),
             avios_per_euro=round(avios_per_euro, 2),
             is_avios_redeemable=is_avios_redeemable,
+            opportunity_earns_redeemable=True,  # Card-only: no non-redeemable opportunity
             earning_currency=earning_currency,
             all_enrolled=len(programs_needed) == 0,
             programs_needed=programs_needed,
         ))
 
-    # Sort: Avios-redeemable first, then enrolled first, then by avios_per_euro (or total_points for non-Avios)
+    # Sort: redeemable opportunities first, then Avios-redeemable, then enrolled, then by avios_per_euro
     strategies.sort(key=lambda s: (
+        -int(s.opportunity_earns_redeemable),  # Redeemable opportunities first
         -int(s.is_avios_redeemable),
         -int(s.all_enrolled),
         -s.avios_per_euro if s.is_avios_redeemable else 0,

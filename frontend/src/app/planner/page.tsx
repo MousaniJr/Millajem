@@ -28,6 +28,7 @@ export default function Planner() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [expandedInfo, setExpandedInfo] = useState<number | null>(null);
+  const [showSecondary, setShowSecondary] = useState(false);
 
   const currencySymbol = country === 'BR' ? 'R$' : country === 'GI' ? '£' : '€';
 
@@ -150,136 +151,162 @@ export default function Planner() {
           </div>
         )}
 
-        {!loading && strategies.length > 0 && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">
-              {strategies.length} estrategias encontradas para{' '}
-              <span className="text-primary-600">{currencySymbol}{amount}</span> en{' '}
-              <span className="text-primary-600">
-                {CATEGORIES.find((c) => c.value === category)?.label}
-              </span>
-            </h2>
+        {!loading && strategies.length > 0 && (() => {
+          // Split into primary (opportunity earns redeemable points) and secondary (cash/saldo/discounts)
+          const primary = strategies.filter((s) => s.opportunity_earns_redeemable);
+          const secondary = strategies.filter((s) => !s.opportunity_earns_redeemable);
 
-            <div className="space-y-4">
-              {strategies.map((s) => (
-                <div
-                  key={s.rank}
-                  className={`bg-white rounded-lg shadow p-5 border-l-4 ${
-                    !s.is_avios_redeemable
-                      ? 'border-l-gray-300 opacity-80'
-                      : s.rank === 1
-                      ? 'border-l-yellow-400'
-                      : s.rank <= 3
-                      ? 'border-l-primary-400'
-                      : 'border-l-gray-200'
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                    {/* Left: Strategy Details */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${
-                          s.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
-                          s.rank <= 3 ? 'bg-primary-100 text-primary-800' :
-                          'bg-gray-100 text-gray-600'
-                        }`}>
-                          #{s.rank}
-                        </span>
-                        {!s.all_enrolled && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                            Requiere inscripción
-                          </span>
-                        )}
-                        {s.all_enrolled && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Activo
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Steps */}
-                      <div className="space-y-2">
-                        {s.opportunity_name && (
-                          <div className="flex items-start gap-2">
-                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold mt-0.5">1</span>
-                            <div>
-                              <span className="font-medium text-gray-900">{s.opportunity_name}</span>
-                              {s.opportunity_earning_description && (
-                                <span className="text-gray-500 text-sm ml-1">— {s.opportunity_earning_description}</span>
-                              )}
-                              {s.opportunity_how_to_use && (
-                                <p className="text-gray-400 text-xs mt-0.5">{s.opportunity_how_to_use}</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {s.card_name && (
-                          <div className="flex items-start gap-2">
-                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold mt-0.5">
-                              {s.opportunity_name ? '2' : '1'}
-                            </span>
-                            <div>
-                              <span className="font-medium text-gray-900">Pagar con {s.card_name}</span>
-                              <span className="text-gray-500 text-sm ml-1">
-                                ({s.card_bank}) — {s.card_earning_rate} pts/{currencySymbol}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Non-enrolled programs warning */}
-                      {s.programs_needed.length > 0 && (
-                        <p className="text-orange-600 text-xs mt-2">
-                          Necesitas inscribirte en: {s.programs_needed.join(', ')}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Right: Points Summary */}
-                    <div className="sm:text-right sm:min-w-[180px] bg-gray-50 rounded-lg p-3">
-                      {s.is_avios_redeemable ? (
-                        <>
-                          <div className="text-2xl font-bold text-primary-700">
-                            {s.avios_per_euro} <span className="text-sm font-normal text-gray-500">Avios/{currencySymbol}</span>
-                          </div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            {s.avios_equivalent.toLocaleString()} Avios totales
-                          </div>
-                          {s.opportunity_points > 0 && s.card_points > 0 && (
-                            <div className="text-xs text-gray-400 mt-1">
-                              {s.opportunity_points.toLocaleString()} (plataforma) + {s.card_points.toLocaleString()} (tarjeta)
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex items-center sm:justify-end gap-1">
-                            <span className="text-lg font-bold text-gray-600">
-                              {s.total_points.toLocaleString()} pts
-                            </span>
-                            <button
-                              onClick={() => setExpandedInfo(expandedInfo === s.rank ? null : s.rank)}
-                              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold hover:bg-blue-200 transition-colors"
-                              title="Más información"
-                            >
-                              i
-                            </button>
-                          </div>
-                          {expandedInfo === s.rank && (
-                            <div className="text-xs text-gray-500 mt-2 bg-blue-50 rounded p-2 text-left">
-                              {s.earning_currency || 'Puntos'} — no canjeable directamente por Avios
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
+          const renderStrategyCard = (s: StrategyItem, index: number) => (
+            <div
+              key={`${s.rank}-${index}`}
+              className={`bg-white rounded-lg shadow p-5 border-l-4 ${
+                !s.is_avios_redeemable
+                  ? 'border-l-gray-300 opacity-80'
+                  : index === 0 && s.opportunity_earns_redeemable
+                  ? 'border-l-yellow-400'
+                  : index < 3 && s.opportunity_earns_redeemable
+                  ? 'border-l-primary-400'
+                  : 'border-l-gray-200'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${
+                      index === 0 && s.opportunity_earns_redeemable ? 'bg-yellow-100 text-yellow-800' :
+                      index < 3 && s.opportunity_earns_redeemable ? 'bg-primary-100 text-primary-800' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      #{index + 1}
+                    </span>
+                    {!s.all_enrolled && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        Requiere inscripción
+                      </span>
+                    )}
+                    {s.all_enrolled && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Activo
+                      </span>
+                    )}
                   </div>
+
+                  <div className="space-y-2">
+                    {s.opportunity_name && (
+                      <div className="flex items-start gap-2">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold mt-0.5">1</span>
+                        <div>
+                          <span className="font-medium text-gray-900">{s.opportunity_name}</span>
+                          {s.opportunity_earning_description && (
+                            <span className="text-gray-500 text-sm ml-1">— {s.opportunity_earning_description}</span>
+                          )}
+                          {s.opportunity_how_to_use && (
+                            <p className="text-gray-400 text-xs mt-0.5">{s.opportunity_how_to_use}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {s.card_name && (
+                      <div className="flex items-start gap-2">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold mt-0.5">
+                          {s.opportunity_name ? '2' : '1'}
+                        </span>
+                        <div>
+                          <span className="font-medium text-gray-900">Pagar con {s.card_name}</span>
+                          <span className="text-gray-500 text-sm ml-1">
+                            ({s.card_bank}) — {s.card_earning_rate} pts/{currencySymbol}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {s.programs_needed.length > 0 && (
+                    <p className="text-orange-600 text-xs mt-2">
+                      Necesitas inscribirte en: {s.programs_needed.join(', ')}
+                    </p>
+                  )}
                 </div>
-              ))}
+
+                <div className="sm:text-right sm:min-w-[180px] bg-gray-50 rounded-lg p-3">
+                  {s.is_avios_redeemable ? (
+                    <>
+                      <div className="text-2xl font-bold text-primary-700">
+                        {s.avios_per_euro} <span className="text-sm font-normal text-gray-500">Avios/{currencySymbol}</span>
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {s.avios_equivalent.toLocaleString()} Avios totales
+                      </div>
+                      {s.opportunity_points > 0 && s.card_points > 0 && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          {s.opportunity_points.toLocaleString()} (plataforma) + {s.card_points.toLocaleString()} (tarjeta)
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center sm:justify-end gap-1">
+                        <span className="text-lg font-bold text-gray-600">
+                          {s.total_points.toLocaleString()} pts
+                        </span>
+                        <button
+                          onClick={() => setExpandedInfo(expandedInfo === s.rank ? null : s.rank)}
+                          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold hover:bg-blue-200 transition-colors"
+                          title="Más información"
+                        >
+                          i
+                        </button>
+                      </div>
+                      {expandedInfo === s.rank && (
+                        <div className="text-xs text-gray-500 mt-2 bg-blue-50 rounded p-2 text-left">
+                          {s.earning_currency || 'Puntos'} — no canjeable directamente por Avios
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+
+          return (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                {primary.length} estrategias con puntos canjeables para{' '}
+                <span className="text-primary-600">{currencySymbol}{amount}</span> en{' '}
+                <span className="text-primary-600">
+                  {CATEGORIES.find((c) => c.value === category)?.label}
+                </span>
+              </h2>
+
+              {/* Primary strategies: redeemable points */}
+              <div className="space-y-4">
+                {primary.map((s, i) => renderStrategyCard(s, i))}
+              </div>
+
+              {/* Secondary strategies: cash/saldo/discounts - hidden behind toggle */}
+              {secondary.length > 0 && (
+                <div className="mt-6">
+                  <button
+                    onClick={() => setShowSecondary(!showSecondary)}
+                    className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 font-medium"
+                  >
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-xs font-bold">
+                      {showSecondary ? '−' : '+'}
+                    </span>
+                    {showSecondary ? 'Ocultar' : 'Mostrar'} {secondary.length} ofertas con saldo/descuentos
+                  </button>
+
+                  {showSecondary && (
+                    <div className="space-y-3 mt-3">
+                      {secondary.map((s, i) => renderStrategyCard(s, i))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </ProtectedRoute>
   );
