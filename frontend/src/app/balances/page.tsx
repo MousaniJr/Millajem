@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { programsApi, balancesApi, LoyaltyProgram, Balance } from '@/lib/api';
+import { programsApi, balancesApi, dataApi, LoyaltyProgram, Balance, DataExport } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function Balances() {
@@ -104,6 +104,55 @@ export default function Balances() {
     setShowForm(false);
   };
 
+  const handleExport = async () => {
+    try {
+      const res = await dataApi.export();
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `millajem-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error exporting data:', err);
+      alert('Error al exportar datos');
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data: DataExport = JSON.parse(text);
+
+      if (!data.version || !data.balances || !data.enrolled_programs) {
+        alert('Archivo no válido. Debe ser un archivo exportado desde Millajem.');
+        return;
+      }
+
+      const res = await dataApi.import(data);
+      const result = res.data;
+      alert(
+        `Importación completada:\n` +
+        `- ${result.balances_imported} saldos importados\n` +
+        `- ${result.programs_enrolled} programas activados\n` +
+        (result.programs_not_found.length > 0
+          ? `- Programas no encontrados: ${result.programs_not_found.join(', ')}`
+          : '')
+      );
+      loadData();
+    } catch (err) {
+      console.error('Error importing data:', err);
+      alert('Error al importar datos. Verifica que el archivo sea válido.');
+    }
+
+    // Reset file input
+    e.target.value = '';
+  };
+
   const handleCreateProgram = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -146,19 +195,36 @@ export default function Balances() {
     <ProtectedRoute>
       <div className="space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Mis Saldos</h2>
           <p className="mt-2 text-sm text-gray-600">
             Registra y actualiza tus saldos manualmente
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
-        >
-          {showForm ? 'Cancelar' : '+ Añadir Saldo'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleExport}
+            className="bg-gray-100 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-200 text-sm font-medium"
+          >
+            Exportar Datos
+          </button>
+          <label className="bg-gray-100 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-200 text-sm font-medium cursor-pointer">
+            Importar Datos
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
+          </label>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 text-sm font-medium"
+          >
+            {showForm ? 'Cancelar' : '+ Añadir Saldo'}
+          </button>
+        </div>
       </div>
 
         {/* Form */}

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import get_settings
 from .database import init_db
-from .api import programs, balances, calculator, alerts, promotions, recommendations, sources, auth, planner
+from .api import programs, balances, calculator, alerts, promotions, recommendations, sources, auth, planner, data_export
 
 settings = get_settings()
 
@@ -32,6 +32,7 @@ app.include_router(promotions.router, prefix="/api")
 app.include_router(recommendations.router, prefix="/api")
 app.include_router(sources.router)
 app.include_router(planner.router, prefix="/api")
+app.include_router(data_export.router, prefix="/api")
 
 
 def _migrate_db():

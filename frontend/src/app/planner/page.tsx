@@ -27,6 +27,7 @@ export default function Planner() {
   const [strategies, setStrategies] = useState<StrategyItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [expandedInfo, setExpandedInfo] = useState<number | null>(null);
 
   const currencySymbol = country === 'BR' ? 'R$' : country === 'GI' ? '£' : '€';
 
@@ -164,7 +165,9 @@ export default function Planner() {
                 <div
                   key={s.rank}
                   className={`bg-white rounded-lg shadow p-5 border-l-4 ${
-                    s.rank === 1
+                    !s.is_avios_redeemable
+                      ? 'border-l-gray-300 opacity-80'
+                      : s.rank === 1
                       ? 'border-l-yellow-400'
                       : s.rank <= 3
                       ? 'border-l-primary-400'
@@ -235,16 +238,40 @@ export default function Planner() {
 
                     {/* Right: Points Summary */}
                     <div className="sm:text-right sm:min-w-[180px] bg-gray-50 rounded-lg p-3">
-                      <div className="text-2xl font-bold text-primary-700">
-                        {s.avios_per_euro} <span className="text-sm font-normal text-gray-500">Avios/{currencySymbol}</span>
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        {s.avios_equivalent.toLocaleString()} Avios totales
-                      </div>
-                      {s.opportunity_points > 0 && s.card_points > 0 && (
-                        <div className="text-xs text-gray-400 mt-1">
-                          {s.opportunity_points.toLocaleString()} (plataforma) + {s.card_points.toLocaleString()} (tarjeta)
-                        </div>
+                      {s.is_avios_redeemable ? (
+                        <>
+                          <div className="text-2xl font-bold text-primary-700">
+                            {s.avios_per_euro} <span className="text-sm font-normal text-gray-500">Avios/{currencySymbol}</span>
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {s.avios_equivalent.toLocaleString()} Avios totales
+                          </div>
+                          {s.opportunity_points > 0 && s.card_points > 0 && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              {s.opportunity_points.toLocaleString()} (plataforma) + {s.card_points.toLocaleString()} (tarjeta)
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center sm:justify-end gap-1">
+                            <span className="text-lg font-bold text-gray-600">
+                              {s.total_points.toLocaleString()} pts
+                            </span>
+                            <button
+                              onClick={() => setExpandedInfo(expandedInfo === s.rank ? null : s.rank)}
+                              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold hover:bg-blue-200 transition-colors"
+                              title="Más información"
+                            >
+                              i
+                            </button>
+                          </div>
+                          {expandedInfo === s.rank && (
+                            <div className="text-xs text-gray-500 mt-2 bg-blue-50 rounded p-2 text-left">
+                              {s.earning_currency || 'Puntos'} — no canjeable directamente por Avios
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

@@ -192,6 +192,8 @@ export interface StrategyItem {
   total_points: number;
   avios_equivalent: number;
   avios_per_euro: number;
+  is_avios_redeemable: boolean;
+  earning_currency: string | null;
   all_enrolled: boolean;
   programs_needed: string[];
 }
@@ -206,4 +208,24 @@ export interface StrategyResponse {
 export const plannerApi = {
   getStrategies: (data: { category: string; amount: number; country: string }) =>
     api.post<StrategyResponse>('/api/planner/strategies', data),
+};
+
+// Data export/import types
+export interface DataExport {
+  version: number;
+  exported_at: string;
+  balances: { program_name: string; points: number; notes: string | null }[];
+  enrolled_programs: string[];
+}
+
+export interface ImportResult {
+  balances_imported: number;
+  balances_skipped: number;
+  programs_enrolled: number;
+  programs_not_found: string[];
+}
+
+export const dataApi = {
+  export: () => api.get<DataExport>('/api/data/export'),
+  import: (data: DataExport) => api.post<ImportResult>('/api/data/import', data),
 };
