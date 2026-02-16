@@ -139,6 +139,8 @@ export default function Balances() {
         `Importación completada:\n` +
         `- ${result.balances_imported} saldos importados\n` +
         `- ${result.programs_enrolled} programas activados\n` +
+        `- ${result.sources_added || 0} fuentes añadidas\n` +
+        `- ${result.sources_toggled || 0} fuentes desactivadas\n` +
         (result.programs_not_found.length > 0
           ? `- Programas no encontrados: ${result.programs_not_found.join(', ')}`
           : '')

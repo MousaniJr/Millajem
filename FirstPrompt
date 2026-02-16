@@ -1,20 +1,11 @@
-Primer Prompt:
-Quiero una investigación exaustiva sobre el proyecto que describiré a continuación y luego crear una documentación donde yo pueda ver si tenemos  las ideas claras para luego empezar a mejorarla. Solamente una vez finalizado el proceso de investigación y objetivos, daremos el inicio a la parte de desarollo.
-Ahora mismo estamos solo en el proceso de investigación.
+Millajem: Esta aplicación es para ayudarme a gestionar mis compras del día a día con el objetivo principal de ganar y acumular millas y avios. 
+Esta web app tiene que estar siempre actualizada con las empresas de los 3 paises donde frecuento (España, Brasil y Gibraltar) y con sus promociones, ofertas y programas de fidelidad para conseguir la mayor cantidad de puntos posibles por euro, real o libra gastada.
+El objetivo final de la acumulación de puntos, millas y avios es para conseguir billetes de voo mas baratos.
+La web esta hospedada en Railway desde github https://github.com/MousaniJr/Millajem
 
-El objetivo de este proyecto es crear una aplicación web que monitorice y recomiende cualquier tipo de compra para buscar siempre la mejor oferta relacionada a la adquisición de puntos.
-Esos puntos tienen que ser canjeable por millas y/o avios.
-Mi objetivo personal es acumular la mayor cantidad de millas posibles para en el futuro canjearlas por viajes o servicios gratuitos o con descuentos.
-Existen muchas apps y webs brasileñas que hacen muchas promociones de cambios de puntos de este estilo. Algunas de ellas son:
-    * - Livelo https://www.livelo.com.br/
-    * - Esfera https://www.esfera.com.vc
-    * - smiles https://www.smiles.com.br
-Otro servicio de nuestra web es recomendar tarjetas, bancos, tiendas y cualquier forma de ganar y acumular puntos.
+Dado el objetivo principal de la web, quiero que investigues si las fuentes estan actualizadas, si los links estan funcionando, y si las informaciones de las empresas y sus programas de puntos estan correctamente actualizadas y enlazadas en nuestra web tanto en el apartado "Promociones" como en el apartado "Planificador".
+Quiero que se pueda añadir, eliminar, activar o desactivar las fuentes ya que pueden ser empresas que dan puntos pero no la utilizamos por algun motivo en particular.
+Eliminar links y fuentes que no funcionan así como errores y duplicaciones en el código.
 
-Primer Feedback/alteraciones
-El objetivo de la aplicación es para uso personal, para uso propio, no vamos a comercializarlo.
-Otro punto importante a cambiar e implementar es que a parte de Brasil, tambien quiero el monitoreo y gestion de los puntos, millas y avios en el mercado Europeo y principalmente español, ya que es donde viviemos y donde tenemos nuestra renta familiar (Bancos, tarjetas y mayoria de compras).
-He citado Brasil porque parece haber un gran mercado fidelización y obtención de puntos y tambien porque es un importante destino de viajes para nostros, pero tambien viajaremos a otros paises. Así que quiero que tenga muy presente Brasil pero tambien otros paises para utilizando y canjeo de esos puntos.
-
-Segundo Feedback/alteraciones
-Incluir Gibraltar en la lista de posibles lugares para adquirir puntos/millas ya que es donde trabajamos y tenemos facil acceso.
+Vamos empezar primero solo con españa, recordad que el enfoque es utilizar empresas del día a dia tal como están en el apartado "Planificador" y que sea posible conseguir puntos. Tanto utilizando tarjetas, gift cards, cuentas en las empresas y tiendas, efectivo, y cualquier posibilidad de adquirir puntos es bienvenida y deberá ser recomendada.
+Una vez terminado, probamos y si va todo bien y luego avanzamos con el siguiente país.

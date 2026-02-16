@@ -1,9 +1,10 @@
 """
-Scraper de feeds RSS de blogs de viajes y puntos
+Scraper de feeds RSS de blogs de viajes y puntos.
+Carga feeds desde la base de datos (tabla sources) con fallback a feeds hardcodeados.
 """
 import feedparser
 from bs4 import BeautifulSoup
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime
 import re
 
@@ -11,28 +12,16 @@ import re
 class RSSFeedScraper:
     """Scraper de feeds RSS de blogs de viajes"""
 
-    # Feeds de blogs españoles
-    SPANISH_FEEDS = {
+    # Feeds hardcodeados como fallback si la BD está vacía
+    FALLBACK_FEEDS = {
         "puntos_viajeros": "https://puntosviajeros.com/feed/",
         "travel_dealz": "https://travel-dealz.com/feed/",
-    }
-
-    # Feeds de blogs UK/Gibraltar (relevantes para fronterizos y Avios)
-    UK_GIBRALTAR_FEEDS = {
-        "head_for_points": "https://www.headforpoints.com/feed/",  # Principal UK
+        "head_for_points": "https://www.headforpoints.com/feed/",
         "insideflyer_uk": "https://www.insideflyer.co.uk/feed/",
         "turning_left_less": "https://www.turningleftforless.com/feed/",
-    }
-
-    # Feeds internacionales (relevantes para todos)
-    INTERNATIONAL_FEEDS = {
         "one_mile_time": "https://onemileatatime.com/feed/",
         "the_points_guy": "https://thepointsguy.com/feed/",
         "frequent_miler": "https://frequentmiler.com/feed/",
-    }
-
-    # Feeds de blogs brasileños
-    BRAZILIAN_FEEDS = {
         "melhores_destinos": "https://www.melhoresdestinos.com.br/feed",
         "passageiro_primeira": "https://passageirodeprimeira.com/feed/",
         "pontos_voar": "https://pontospravoar.com/feed/",
@@ -54,13 +43,35 @@ class RSSFeedScraper:
         "error_fare": ["error fare", "tarifa error", "precio error"],
     }
 
-    def __init__(self):
-        self.feeds = {
-            **self.SPANISH_FEEDS,
-            **self.UK_GIBRALTAR_FEEDS,
-            **self.INTERNATIONAL_FEEDS,
-            **self.BRAZILIAN_FEEDS
-        }
+    def __init__(self, db=None):
+        """Initialize scraper. If db session provided, loads feeds from database."""
+        self.feeds = {}
+        self._source_map = {}  # feed_key -> source DB object (for updating stats)
+
+        if db:
+            self._load_feeds_from_db(db)
+
+        # Fallback to hardcoded feeds if DB returned nothing
+        if not self.feeds:
+            self.feeds = dict(self.FALLBACK_FEEDS)
+
+    def _load_feeds_from_db(self, db):
+        """Load active RSS feed sources from database"""
+        from ..models import Source
+        sources = db.query(Source).filter(
+            Source.source_type == "rss_feed",
+            Source.is_active == True,
+        ).order_by(Source.priority.desc()).all()
+
+        for source in sources:
+            # Create a safe key from the name (snake_case)
+            key = re.sub(r'[^a-z0-9]+', '_', source.name.lower()).strip('_')
+            self.feeds[key] = source.url
+            self._source_map[key] = source
+
+    def get_source_for_feed(self, feed_key: str):
+        """Get the database Source object for a feed key (for updating stats)"""
+        return self._source_map.get(feed_key)
 
     def fetch_feed(self, feed_url: str) -> Dict:
         """Obtener entradas de un feed RSS"""
@@ -147,28 +158,24 @@ class RSSFeedScraper:
             return "general_info"
 
     def determine_country(self, feed_name: str, text: str) -> str:
-        """Determinar país de la promoción"""
+        """Determinar país de la promoción usando la BD source o contenido"""
         text_lower = text.lower()
 
-        # Por feed
-        if feed_name in self.BRAZILIAN_FEEDS:
-            return "BR"
-        elif feed_name in self.SPANISH_FEEDS:
-            return "ES"
-        elif feed_name in self.UK_GIBRALTAR_FEEDS:
-            # UK/Gibraltar - verificar si es específico de España por contenido
-            if any(word in text_lower for word in ["spain", "españa", "iberia", "madrid", "barcelona"]):
-                return "ES"
-            return "INT"  # UK/Gibraltar va a INT por defecto
-        elif feed_name in self.INTERNATIONAL_FEEDS:
-            # Clasificar por contenido
+        # 1. Use country from DB source if available
+        source = self._source_map.get(feed_name)
+        if source:
+            # If source has a specific country, use it (but check content for overrides)
+            source_country = source.country
+            if source_country in ("ES", "BR", "GI"):
+                return source_country
+            # For INT sources, try to classify by content
             if any(word in text_lower for word in ["brasil", "brazil", "livelo", "esfera", "smiles", "azul", "gol"]):
                 return "BR"
             elif any(word in text_lower for word in ["españa", "spain", "iberia", "vueling", "madrid"]):
                 return "ES"
             return "INT"
 
-        # Por contenido (fallback)
+        # 2. Fallback: classify by content only
         if any(word in text_lower for word in ["brasil", "brazilian", "brazil", "livelo", "esfera", "smiles"]):
             return "BR"
         elif any(word in text_lower for word in ["españa", "spain", "iberia", "vueling"]):

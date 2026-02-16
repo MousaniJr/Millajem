@@ -22,11 +22,11 @@ def seed_loyalty_programs(db: Session) -> dict:
              notes="Household Account disponible. GIB-LHR = 7.250 Avios off-peak."),
         dict(name="American Express Membership Rewards ES", currency="MR Points", country="ES", category="transfer",
              avios_ratio=1.0,
-             website_url="https://www.americanexpress.com/es/beneficios/membership-rewards/",
+             website_url="https://www.americanexpress.com/es-es/rewards/membership-rewards/index.mtw",
              notes="1 MR = 1 Avios (Iberia o BA). Mejor ratio de transferencia en España."),
         dict(name="Vueling Club", currency="Avios", country="ES", category="airline",
              avios_ratio=1.0,
-             website_url="https://www.vueling.com/es/vueling-club",
+             website_url="https://www.vueling.com/es/vueling-club/que-es-vueling-club",
              notes="Usa Avios como moneda. Acumula volando Vueling y con partners. Intercambiable con Iberia Club y BA."),
 
         # Brasil
@@ -93,7 +93,7 @@ def seed_credit_cards(db: Session, program_map: dict):
             welcome_bonus_requirement="Gasta 5.000 EUR en los primeros 3 meses",
             minimum_income=None,
             is_available=True,
-            application_url="https://www.americanexpress.com/es/tarjetas/platinum/",
+            application_url="https://www.americanexpress.com/es-es/tarjetas/tarjetas-de-cargo/tarjeta-platinum/",
             notes="1 MR = 1 Avios (Iberia/BA). Acceso salones, seguro viaje premium. Mejor tarjeta ES.",
             recommendation_score=95,
         ),
@@ -112,7 +112,7 @@ def seed_credit_cards(db: Session, program_map: dict):
             welcome_bonus_requirement="Gasta 3.000 EUR en los primeros 3 meses",
             minimum_income=None,
             is_available=True,
-            application_url="https://www.americanexpress.com/es/tarjetas/gold/",
+            application_url="https://www.americanexpress.com/es-es/tarjetas/tarjetas-de-cargo/tarjeta-gold-card/",
             notes="Primer año gratis. 1 MR = 1 Avios. Relación calidad/precio excelente para España.",
             recommendation_score=92,
         ),
@@ -237,16 +237,16 @@ def seed_earning_opportunities(db: Session, program_map: dict):
     opportunities = [
         # ===== ESPAÑA =====
         dict(
-            name="Cepsa Más — Avios por gasolina",
+            name="Moeve (ex-Cepsa) Más — Avios por gasolina",
             category="fuel",
             country="ES",
             loyalty_program_id=iberia_id,
             earning_rate=2.0,
-            earning_description="2 Avios por litro de combustible en estaciones Cepsa/Moeve",
-            how_to_use="Regístrate en Cepsa Más con tu nº de Iberia Club. Usa la app o tarjeta Cepsa en estaciones. Distinto de Cepsa GOW (que da saldo en euros).",
-            requirements="Socio Iberia Club + app/tarjeta Cepsa Más",
-            signup_url="https://www.cepsa.com/es/cepsa-mas",
-            notes="Partnership Cepsa + Iberia Club: Avios directos. Coexiste con Cepsa GOW (saldo euros). Usar ambos si es posible.",
+            earning_description="2 Avios por litro de combustible en estaciones Moeve (antes Cepsa)",
+            how_to_use="Regístrate en Cepsa/Moeve Más con tu nº de Iberia Club. Usa la app en estaciones Moeve. Distinto de Club Moeve gow (que da saldo en euros).",
+            requirements="Socio Iberia Club + app Moeve",
+            signup_url="https://www.moeve.es/es/particular",
+            notes="Partnership Moeve (ex-Cepsa) + Iberia Club: Avios directos. Coexiste con Club Moeve gow (saldo euros). Usar ambos si es posible. Cepsa rebrandeó a Moeve en 2025.",
             is_active=True,
             recommendation_score=90,
         ),
@@ -363,36 +363,7 @@ def seed_sources(db: Session):
             priority=9,
             description="Blog líder en España sobre millas y puntos. Análisis de tarjetas y estrategias.",
         ),
-        dict(
-            name="Millas de Cartón",
-            source_type="rss_feed",
-            country="ES",
-            url="https://www.millasdecarton.com/feed/",
-            website_url="https://www.millasdecarton.com",
-            is_active=True,
-            priority=9,
-            description="Referencia española en maximización de Avios e Iberia Plus.",
-        ),
-        dict(
-            name="Viajero Astuto",
-            source_type="rss_feed",
-            country="ES",
-            url="https://viajeroastuto.com/feed/",
-            website_url="https://viajeroastuto.com",
-            is_active=True,
-            priority=8,
-            description="Guías y estrategias de viajes con puntos en español.",
-        ),
-        dict(
-            name="El Viajero de Millas",
-            source_type="rss_feed",
-            country="ES",
-            url="https://www.elviajeromillas.com/feed/",
-            website_url="https://www.elviajeromillas.com",
-            is_active=True,
-            priority=7,
-            description="Noticias y análisis sobre programas de fidelidad en España.",
-        ),
+        # NOTE: millasdecarton.com, viajeroastuto.com, elviajeromillas.com — removed (domains dead as of Feb 2026)
 
         # ===== BRASIL =====
         dict(
@@ -501,7 +472,7 @@ def seed_spain_additions(db: Session):
              notes="Puntos por viajes Renfe y por gasolina vía Waylet/Repsol. Canjea por billetes AVE/Larga Distancia."),
         dict(name="Travel Club (Repsol)", currency="Puntos Travel Club", country="ES", category="fuel",
              avios_ratio=None,
-             website_url="https://www.repsol.com/es/particulares/beneficios-clientes/tarjeta-repsol-travel/",
+             website_url="https://www.repsol.es/particulares/beneficios-clientes/tarjeta-repsol-travel/",
              notes="Programa integrado Repsol Travel. Puntos por gasolina, luz/gas, recarga eléctrica. Canjea por viajes, carburante, lavados."),
         dict(name="Revolut RevPoints ES", currency="RevPoints", country="ES", category="transfer",
              avios_ratio=None,
@@ -550,7 +521,7 @@ def seed_spain_additions(db: Session):
             earning_description="Puntos Travel Club por litro de gasolina, recarga eléctrica y luz/gas",
             how_to_use="Añade la tarjeta Repsol Travel en la app Waylet. Repostaje acumula Puntos Travel Club canjeables por viajes, carburante o lavados.",
             requirements="App Waylet + tarjeta Repsol Travel",
-            signup_url="https://www.repsol.com/es/particulares/beneficios-clientes/tarjeta-repsol-travel/",
+            signup_url="https://www.repsol.es/particulares/beneficios-clientes/tarjeta-repsol-travel/",
             notes="Cepsa GOW es competidor directo. Repsol Travel canjea también por viajes vía Travel Club.",
             is_active=True,
             recommendation_score=82,
@@ -570,16 +541,16 @@ def seed_spain_additions(db: Session):
             recommendation_score=75,
         ),
         dict(
-            name="Cepsa GOW — Saldo por gasolina y partners",
+            name="Club Moeve gow — Saldo por gasolina y partners",
             category="fuel",
             country="ES",
             loyalty_program_id=iberia_id,
             earning_rate=1.0,
-            earning_description="Saldo en euros por repostaje, recargas, lavados y 40+ marcas colaboradoras",
-            how_to_use="Regístrate en Cepsa GOW (sustituye a 'Porque Tú Vuelves'). Usa la app en estaciones Cepsa/Moeve. Saldo canjeable por combustible, lavados o catálogo.",
-            requirements="App Cepsa GOW",
-            signup_url="https://www.moeve.es/es/particular/tu-dia-a-dia/acuerdos-comerciales/el-club",
-            notes="Partners incluyen Amazon, eDreams, Europcar, MediaMarkt, Pangea, Sprinter. Saldo en euros, no puntos.",
+            earning_description="Saldo (saldow) por repostaje, recargas, lavados y 40+ marcas colaboradoras",
+            how_to_use="Regístrate en Club Moeve gow (antes Cepsa GOW). Usa la app en estaciones Moeve. Saldo canjeable por combustible, lavados o catálogo.",
+            requirements="App Moeve",
+            signup_url="https://www.moeve.es/es/particular",
+            notes="Antes Cepsa GOW, ahora Club Moeve gow. Partners incluyen Amazon, eDreams, Europcar, MediaMarkt, Pangea, Sprinter. Saldo en euros, no puntos.",
             is_active=True,
             recommendation_score=78,
         ),
@@ -1104,7 +1075,7 @@ def seed_remaining_additions(db: Session):
             earning_description="1 punto por litro de combustible, canjeable por regalos o lavados",
             how_to_use="Solicita la tarjeta Naftë en la gasolinera. Acumula puntos en cada repostaje. Canjea por regalos del catálogo.",
             requirements="Tarjeta Naftë",
-            signup_url="https://mail.nafte.es/tarjeta-cliente/puntos.php",
+            signup_url="https://www.nafte.es/",
             notes="Valor indirecto: no convierte a Avios/millas. Útil como ahorro complementario en gasolina.",
             is_active=True,
             recommendation_score=45,
@@ -1118,7 +1089,7 @@ def seed_remaining_additions(db: Session):
             earning_description="1 punto por litro, canjeable por regalos o lavados",
             how_to_use="Regístrate en el programa Gasoprix. Acumula puntos en cada visita.",
             requirements="Tarjeta Gasoprix",
-            signup_url="https://www.gasoprix.com/bases-programa-de-puntos-2025/",
+            signup_url="https://www.gasoprix.com/programa-puntos/",
             notes="Valor indirecto: no convierte a Avios. Descuentos y catálogo propio. Útil si usas Gasoprix habitualmente.",
             is_active=True,
             recommendation_score=40,
@@ -1216,6 +1187,7 @@ def run_seed(db: Session):
     seed_remaining_additions(db)
     seed_full_v2(db)
     seed_full_v3(db)
+    seed_fix_broken_data(db)
     return True
 
 
@@ -1277,8 +1249,8 @@ def seed_full_v2(db):
              loyalty_program_id=iberia_id, base_earning_rate=0.5, bonus_categories=None,
              annual_fee=48.0, currency='EUR', first_year_fee=None,
              welcome_bonus=None, welcome_bonus_requirement='Tras gastar 700 EUR',
-             minimum_income=None, is_available=True, application_url='https://www.santander.es/particulares/tarjetas/iberia-club',
-             notes='0.5 Avios/EUR + 200 Avios/mes por domiciliar nomina+recibos. Opcion complementaria si ya eres cliente Santander.', recommendation_score=65),
+             minimum_income=None, is_available=True, application_url='https://www.bancosantander.es/particulares/tarjetas/credito/plan-iberia-plus',
+             notes='1 Avios/2 EUR + 100 Avios/mes por domiciliar nomina + 100 Avios/mes por recibos. 10% dto en iberia.com. 4 EUR/mes.', recommendation_score=65),
         dict(name='BBVA Iberia Icon Visa', bank='BBVA', country='ES', card_network='Visa',
              loyalty_program_id=iberia_id, base_earning_rate=0.33, bonus_categories=None,
              annual_fee=0.0, currency='EUR', first_year_fee=0.0,
@@ -1390,7 +1362,7 @@ def seed_full_v2(db):
              is_active=True, priority=8, description='Canal Telegram alertas de promos brasilenas de Estevam Pelo Mundo.'),
     ]
     for src_data in new_sources:
-        if not db.query(models.Source).filter_by(name=src_data['name']).first():
+        if not db.query(models.Source).filter_by(url=src_data['url']).first():
             db.add(models.Source(**src_data))
     db.commit()
     print('Full v2 seed complete.')
@@ -1710,3 +1682,113 @@ def seed_full_v3(db):
 
     db.commit()
     print('Full v3 seed complete: Added earning opportunities for supermarkets, restaurants, hotels, rideshare.')
+
+
+def seed_fix_broken_data(db):
+    """Fix broken URLs, dead sources, and outdated names in existing DB records (idempotent)."""
+
+    # --- Remove dead RSS feed sources (domains no longer exist as of Feb 2026) ---
+    dead_urls = [
+        "https://www.millasdecarton.com/feed/",
+        "https://viajeroastuto.com/feed/",
+        "https://www.elviajeromillas.com/feed/",
+    ]
+    for url in dead_urls:
+        source = db.query(models.Source).filter_by(url=url).first()
+        if source:
+            db.delete(source)
+            print(f"  Removed dead source: {source.name} ({url})")
+
+    # --- Fix Cepsa → Moeve rebrand on earning opportunities ---
+    cepsa_mas = db.query(models.EarningOpportunity).filter_by(
+        name="Cepsa Más — Avios por gasolina"
+    ).first()
+    if cepsa_mas:
+        cepsa_mas.name = "Moeve (ex-Cepsa) Más — Avios por gasolina"
+        cepsa_mas.earning_description = "2 Avios por litro de combustible en estaciones Moeve (antes Cepsa)"
+        cepsa_mas.signup_url = "https://www.moeve.es/es/particular"
+        cepsa_mas.notes = "Partnership Moeve (ex-Cepsa) + Iberia Club: Avios directos. Coexiste con Club Moeve gow (saldo euros). Usar ambos si es posible. Cepsa rebrandeó a Moeve en 2025."
+        print("  Updated: Cepsa Más → Moeve Más")
+
+    cepsa_gow = db.query(models.EarningOpportunity).filter_by(
+        name="Cepsa GOW — Saldo por gasolina y partners"
+    ).first()
+    if cepsa_gow:
+        cepsa_gow.name = "Club Moeve gow — Saldo por gasolina y partners"
+        cepsa_gow.earning_description = "Saldo (saldow) por repostaje, recargas, lavados y 40+ marcas colaboradoras"
+        cepsa_gow.signup_url = "https://www.moeve.es/es/particular"
+        cepsa_gow.notes = "Antes Cepsa GOW, ahora Club Moeve gow. Partners incluyen Amazon, eDreams, Europcar, MediaMarkt, Pangea, Sprinter. Saldo en euros, no puntos."
+        print("  Updated: Cepsa GOW → Club Moeve gow")
+
+    # --- Fix outdated signup URLs ---
+    nafte = db.query(models.EarningOpportunity).filter(
+        models.EarningOpportunity.signup_url == "https://mail.nafte.es/tarjeta-cliente/puntos.php"
+    ).first()
+    if nafte:
+        nafte.signup_url = "https://www.nafte.es/"
+        print("  Updated: Naftë URL fixed")
+
+    gasoprix = db.query(models.EarningOpportunity).filter(
+        models.EarningOpportunity.signup_url == "https://www.gasoprix.com/bases-programa-de-puntos-2025/"
+    ).first()
+    if gasoprix:
+        gasoprix.signup_url = "https://www.gasoprix.com/programa-puntos/"
+        print("  Updated: Gasoprix URL fixed")
+
+    # --- Fix Amex Spain URLs (URL structure changed to /es-es/) ---
+    amex_url_fixes = {
+        "https://www.americanexpress.com/es/tarjetas/platinum/":
+            "https://www.americanexpress.com/es-es/tarjetas/tarjetas-de-cargo/tarjeta-platinum/",
+        "https://www.americanexpress.com/es/tarjetas/gold/":
+            "https://www.americanexpress.com/es-es/tarjetas/tarjetas-de-cargo/tarjeta-gold-card/",
+        "https://www.americanexpress.com/es/beneficios/membership-rewards/":
+            "https://www.americanexpress.com/es-es/rewards/membership-rewards/index.mtw",
+    }
+    for old_url, new_url in amex_url_fixes.items():
+        # Fix in credit cards
+        card = db.query(models.CreditCard).filter(
+            models.CreditCard.application_url == old_url
+        ).first()
+        if card:
+            card.application_url = new_url
+            print(f"  Updated card URL: {card.name}")
+        # Fix in loyalty programs
+        prog = db.query(models.LoyaltyProgram).filter(
+            models.LoyaltyProgram.website_url == old_url
+        ).first()
+        if prog:
+            prog.website_url = new_url
+            print(f"  Updated program URL: {prog.name}")
+
+    # --- Fix Vueling Club URL ---
+    vueling = db.query(models.LoyaltyProgram).filter_by(name="Vueling Club").first()
+    if vueling and vueling.website_url == "https://www.vueling.com/es/vueling-club":
+        vueling.website_url = "https://www.vueling.com/es/vueling-club/que-es-vueling-club"
+        print("  Updated: Vueling Club URL")
+
+    # --- Fix Repsol Travel Club URL ---
+    travel_club = db.query(models.LoyaltyProgram).filter_by(name="Travel Club (Repsol)").first()
+    if travel_club and "repsol.com" in (travel_club.website_url or ""):
+        travel_club.website_url = "https://www.repsol.es/particulares/beneficios-clientes/tarjeta-repsol-travel/"
+        print("  Updated: Travel Club (Repsol) URL")
+
+    repsol_opp = db.query(models.EarningOpportunity).filter_by(name="Repsol Waylet + Travel Club").first()
+    if repsol_opp and "repsol.com" in (repsol_opp.signup_url or ""):
+        repsol_opp.signup_url = "https://www.repsol.es/particulares/beneficios-clientes/tarjeta-repsol-travel/"
+        print("  Updated: Repsol Waylet opportunity URL")
+
+    # --- Fix Santander Iberia Club card URL ---
+    santander_card = db.query(models.CreditCard).filter_by(name="Santander Iberia Club Visa").first()
+    if santander_card:
+        santander_card.application_url = "https://www.bancosantander.es/en/particulares/tarjetas/credito/plan-iberia-plus"
+        print("  Updated: Santander Iberia Club card URL")
+
+    # --- Deprioritize stale puntosviajeros.com (last post Jan 2023) ---
+    pv_source = db.query(models.Source).filter_by(url="https://puntosviajeros.com/feed/").first()
+    if pv_source and pv_source.priority > 5:
+        pv_source.priority = 5
+        pv_source.notes = "Blog inactivo desde enero 2023. Contenido histórico útil pero sin actualizaciones."
+        print("  Updated: Puntos Viajeros deprioritized (stale since Jan 2023)")
+
+    db.commit()
+    print("Fix broken data complete.")

@@ -216,11 +216,25 @@ export const plannerApi = {
 };
 
 // Data export/import types
+export interface SourceExport {
+  name: string;
+  source_type: string;
+  country: string;
+  url: string;
+  website_url?: string | null;
+  is_active: boolean;
+  priority: number;
+  description?: string | null;
+  notes?: string | null;
+}
+
 export interface DataExport {
   version: number;
   exported_at: string;
   balances: { program_name: string; points: number; notes: string | null }[];
   enrolled_programs: string[];
+  sources?: SourceExport[] | null;
+  deactivated_sources?: string[] | null;
 }
 
 export interface ImportResult {
@@ -228,6 +242,8 @@ export interface ImportResult {
   balances_skipped: number;
   programs_enrolled: number;
   programs_not_found: string[];
+  sources_added: number;
+  sources_toggled: number;
 }
 
 export const dataApi = {

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 from ..database import get_db
+from ..models import Source
 from ..services.promotion_manager import PromotionManager
 from ..services.rss_scraper import RSSFeedScraper
 from ..services.social_scraper import SocialMediaScraper, SOCIAL_MEDIA_SETUP_GUIDE
@@ -33,13 +34,31 @@ def scan_specific_feed(
 
 
 @router.get("/feeds")
-def list_available_feeds():
-    """Listar feeds RSS disponibles"""
-    scraper = RSSFeedScraper()
+def list_available_feeds(
+    country: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Listar feeds RSS activos desde la base de datos"""
+    query = db.query(Source).filter(
+        Source.source_type == "rss_feed",
+        Source.is_active == True,
+    )
+    if country:
+        query = query.filter(Source.country == country)
+
+    sources = query.order_by(Source.priority.desc(), Source.name).all()
+
+    feeds_by_country = {}
+    for source in sources:
+        country_key = source.country
+        if country_key not in feeds_by_country:
+            feeds_by_country[country_key] = {}
+        key = source.name.lower().replace(" ", "_").replace("-", "_")
+        feeds_by_country[country_key][key] = source.url
+
     return {
-        "spanish_feeds": scraper.SPANISH_FEEDS,
-        "brazilian_feeds": scraper.BRAZILIAN_FEEDS,
-        "total": len(scraper.feeds)
+        "feeds_by_country": feeds_by_country,
+        "total": len(sources),
     }
 
 
