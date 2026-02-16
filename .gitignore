@@ -42,6 +42,7 @@ env/
 node_modules/
 .next/
 out/
+*.tsbuildinfo
 .pnp
 .pnp.js
 npm-debug.log*
