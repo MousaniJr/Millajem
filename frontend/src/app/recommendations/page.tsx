@@ -25,11 +25,10 @@ const CONVERSION_CHAINS: Record<string, { steps: string[]; result: string; score
   ],
   GI: [
     { steps: ['Gasolina BP', 'BPme Rewards', 'Avios BA/Iberia'], result: '1-2 pts/litro → Avios', score: 88 },
-    { steps: ['Compras Sainsbury\'s / Esso', 'Nectar Points', 'Avios BA/Iberia'], result: '400 Nectar = 250 Avios', score: 85 },
-    { steps: ['Compras Tesco / Esso', 'Clubcard Points', 'Partners Boost'], result: 'Descuentos/viajes', score: 72 },
+    { steps: ['Compras Tesco GIB', 'Clubcard Points', 'Partners Boost'], result: 'Descuentos/viajes', score: 72 },
     { steps: ['Tránsito Heathrow', 'Heathrow Rewards', 'Avios BA/Iberia'], result: '1 pto/£1 gastado', score: 80 },
     { steps: ['Vuelo BA GIB-LHR', 'BA Executive Club', 'Canje vuelos long-haul'], result: '7.250 Avios/vuelo', score: 85 },
-    { steps: ['Gasto diario GIB', 'BA Amex Premium Plus', 'Avios + 2-4-1 voucher'], result: '1.5 Avios/£', score: 88 },
+    { steps: ['Gasto diario GIB', 'Amex España (pago en GIB)', 'MR → Avios (comisión FX ~2%)'], result: '1 Avios/€', score: 78 },
     { steps: ['Compras online UK', 'BA Avios eStore', 'BA Executive Club'], result: '2-10 Avios/£', score: 82 },
   ],
 };
@@ -121,6 +120,7 @@ export default function Recommendations() {
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
       fuel: '⛽',
+      flights: '✈️',
       rideshare: '🚗',
       shopping_portal: '🛍️',
       dining: '🍽️',

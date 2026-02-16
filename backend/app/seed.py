@@ -164,15 +164,15 @@ def seed_credit_cards(db: Session, program_map: dict):
             loyalty_program_id=ba_id,
             base_earning_rate=1.5,
             bonus_categories=None,
-            annual_fee=0.0,
+            annual_fee=290.0,
             currency="GBP",
             first_year_fee=None,
             welcome_bonus=None,
-            welcome_bonus_requirement=None,
-            minimum_income=None,
-            is_available=True,
+            welcome_bonus_requirement="Requiere HSBC Premier (£50K saldo o £75K ingreso)",
+            minimum_income=75000,
+            is_available=False,
             application_url="https://www.hsbc.gi/",
-            notes="PENDIENTE VERIFICAR con HSBC GIB. Si accesible para fronterizos = mejor tarjeta GIB. 1.5 Avios/GBP.",
+            notes="PENDIENTE VERIFICAR con HSBC GIB. Si accesible para fronterizos = mejor tarjeta GIB. 1.5 Avios/GBP. Cuota £290/año incluida en HSBC Premier.",
             recommendation_score=80,
         ),
 
@@ -326,7 +326,7 @@ def seed_earning_opportunities(db: Session, program_map: dict):
         # ===== GIBRALTAR =====
         dict(
             name="British Airways GIB-LHR Avios",
-            category="rideshare",
+            category="flights",
             country="GI",
             loyalty_program_id=ba_id,
             earning_rate=7250.0,
@@ -825,7 +825,7 @@ def seed_uk_gibraltar_additions(db: Session):
              avios_ratio=None,
              website_url="https://www.bp.com/en_gb/united-kingdom/home/products-and-services/bpme-rewards.html",
              notes="Mejor programa de gasolinera UK para Air Miles. 1-2 puntos/litro → Avios. 'Best for Air Miles' según comparativas."),
-        dict(name="Nectar (Sainsbury's/Esso)", currency="Nectar Points", country="GI", category="supermarket",
+        dict(name="Nectar (Sainsbury's/Esso)", currency="Nectar Points", country="UK", category="supermarket",
              avios_ratio=None,
              website_url="https://www.nectar.com/",
              notes="400 Nectar = 250 Avios (Iberia o BA). Conversión automática posible. Acumula en Sainsbury's y estaciones Esso."),
@@ -837,10 +837,7 @@ def seed_uk_gibraltar_additions(db: Session):
              avios_ratio=None,
              website_url="https://www.heathrow.com/rewards",
              notes="1 punto por £1 en tiendas/bares/parking Heathrow, 1 punto por £10 en casa de cambio. Convierte a Avios (Iberia o BA)."),
-        dict(name="American Express Membership Rewards UK", currency="MR Points UK", country="GI", category="transfer",
-             avios_ratio=1.0,
-             website_url="https://www.americanexpress.com/en-gb/rewards/membership-rewards/",
-             notes="Puntos transferibles a BA, Iberia y otros. 'Livelo británico'. Tarjetas Gold/Platinum UK."),
+        # Amex MR UK removed — requires UK address, no accessible cards from Gibraltar
     ]
 
     program_map = {}
@@ -865,7 +862,6 @@ def seed_uk_gibraltar_additions(db: Session):
     nectar_id = get_id("Nectar (Sainsbury's/Esso)")
     tesco_id = get_id("Tesco Clubcard")
     heathrow_id = get_id("Heathrow Rewards")
-    amex_uk_id = get_id("American Express Membership Rewards UK")
 
     # --- Nuevas oportunidades UK/GIB ---
     new_opportunities = [
@@ -884,9 +880,9 @@ def seed_uk_gibraltar_additions(db: Session):
             recommendation_score=88,
         ),
         dict(
-            name="Sainsbury's + Esso Nectar → Avios (UK/GIB)",
+            name="Sainsbury's + Esso Nectar → Avios (UK)",
             category="supermarket",
-            country="GI",
+            country="UK",
             loyalty_program_id=nectar_id,
             earning_rate=1.0,
             earning_description="1 punto Nectar/litro en Esso + puntos por compras en Sainsbury's → 400 Nectar = 250 Avios",
@@ -947,72 +943,8 @@ def seed_uk_gibraltar_additions(db: Session):
             obj = models.EarningOpportunity(**o)
             db.add(obj)
 
-    # --- Nuevas tarjetas UK/GIB ---
-    new_cards = [
-        dict(
-            name="BA Amex Premium Plus (UK)",
-            bank="American Express UK",
-            country="GI",
-            card_network="Amex",
-            loyalty_program_id=ba_id,
-            base_earning_rate=1.5,
-            bonus_categories='{"ba_flights": 3.0}',
-            annual_fee=250.0,
-            currency="GBP",
-            first_year_fee=None,
-            welcome_bonus=25000,
-            welcome_bonus_requirement="Gasta £3.000 en los primeros 3 meses",
-            minimum_income=None,
-            is_available=True,
-            application_url="https://www.americanexpress.com/en-gb/credit-cards/british-airways-american-express-premium-plus-card/",
-            notes="Mejor tarjeta BA UK. 1.5 Avios/£ base, 3 Avios/£ en BA. 2-4-1 voucher con £10k gasto/año. Necesita dirección UK.",
-            recommendation_score=88,
-        ),
-        dict(
-            name="Barclaycard Avios Plus (UK)",
-            bank="Barclaycard",
-            country="GI",
-            card_network="Visa",
-            loyalty_program_id=ba_id,
-            base_earning_rate=1.5,
-            bonus_categories=None,
-            annual_fee=20.0,
-            currency="GBP",
-            first_year_fee=None,
-            welcome_bonus=5000,
-            welcome_bonus_requirement="Gasta £1.000 en los primeros 3 meses",
-            minimum_income=None,
-            is_available=True,
-            application_url="https://www.barclaycard.co.uk/personal/credit-cards/avios/",
-            notes="1.5 Avios/£. Alternativa a BA Amex. Necesita dirección UK.",
-            recommendation_score=78,
-        ),
-        dict(
-            name="Amex Gold UK (Membership Rewards UK)",
-            bank="American Express UK",
-            country="GI",
-            card_network="Amex",
-            loyalty_program_id=amex_uk_id,
-            base_earning_rate=1.0,
-            bonus_categories='{"travel": 2.0, "restaurants": 2.0}',
-            annual_fee=0.0,
-            currency="GBP",
-            first_year_fee=0.0,
-            welcome_bonus=20000,
-            welcome_bonus_requirement="Gasta £3.000 en los primeros 3 meses",
-            minimum_income=None,
-            is_available=True,
-            application_url="https://www.americanexpress.com/en-gb/credit-cards/gold-card/",
-            notes="MR UK transferibles a BA y otros. Primer año gratis. Necesita dirección UK.",
-            recommendation_score=80,
-        ),
-    ]
-
-    for c in new_cards:
-        exists = db.query(models.CreditCard).filter_by(name=c["name"]).first()
-        if not exists:
-            obj = models.CreditCard(**c)
-            db.add(obj)
+    # UK cards removed: BA Amex Premium Plus, Barclaycard Avios Plus, Amex Gold UK
+    # — all require UK address, inaccessible from Gibraltar
 
     db.commit()
     print("UK/Gibraltar additions seed complete.")
@@ -1030,7 +962,7 @@ def seed_remaining_additions(db: Session):
         qatar = models.LoyaltyProgram(
             name="Qatar Airways Privilege Club",
             currency="Avios",
-            country="GI",
+            country="INT",
             category="airline",
             avios_ratio=1.0,
             website_url="https://www.qatarairways.com/en/privilege-club.html",
@@ -1051,8 +983,8 @@ def seed_remaining_additions(db: Session):
     if not db.query(models.EarningOpportunity).filter_by(name="Qatar Privilege Club — Avios por vuelos OneWorld").first():
         db.add(models.EarningOpportunity(
             name="Qatar Privilege Club — Avios por vuelos OneWorld",
-            category="rideshare",
-            country="GI",
+            category="flights",
+            country="INT",
             loyalty_program_id=qatar_id,
             earning_rate=1.0,
             earning_description="Avios por vuelos Qatar Airways y aerolíneas OneWorld",
@@ -1105,7 +1037,7 @@ def seed_remaining_additions(db: Session):
         dict(
             name="Morrisons More — Puntos por compras y gasolina (UK)",
             category="fuel",
-            country="GI",
+            country="UK",
             loyalty_program_id=None,
             earning_rate=1.0,
             earning_description="Puntos More por compras en Morrisons y gasolineras Morrisons",
@@ -1133,7 +1065,7 @@ def seed_remaining_additions(db: Session):
         dict(
             name="ASDA Rewards — Cashback por compras y gasolina (UK)",
             category="fuel",
-            country="GI",
+            country="UK",
             loyalty_program_id=None,
             earning_rate=1.0,
             earning_description="Cashback en 'Cashpot' por compras ASDA y repostaje en gasolineras ASDA",
@@ -1147,7 +1079,7 @@ def seed_remaining_additions(db: Session):
         dict(
             name="Valero SaveUp — Puntos por gasolina (UK)",
             category="fuel",
-            country="GI",
+            country="UK",
             loyalty_program_id=None,
             earning_rate=1.0,
             earning_description="Puntos SaveUp por litro en estaciones Valero/Texas",
@@ -1828,6 +1760,87 @@ def seed_fix_broken_data(db):
     if marriott_prog and marriott_prog.website_url == "https://www.marriott.com/loyalty/":
         marriott_prog.website_url = "https://www.marriott.com/loyalty.mi"
         print("  Updated: Marriott Bonvoy program website_url (404 fix)")
+
+    # ====== GIBRALTAR AUDIT FIXES ======
+
+    # --- Fix HSBC Premier World Elite MC: wrong fee, missing income, should be unavailable ---
+    hsbc = db.query(models.CreditCard).filter_by(name="HSBC Premier World Elite Mastercard (GIB)").first()
+    if hsbc:
+        if hsbc.annual_fee != 290.0:
+            hsbc.annual_fee = 290.0
+            print("  Updated: HSBC Premier annual_fee → 290.0")
+        if hsbc.minimum_income != 75000:
+            hsbc.minimum_income = 75000
+            print("  Updated: HSBC Premier minimum_income → 75000")
+        if not hsbc.welcome_bonus_requirement:
+            hsbc.welcome_bonus_requirement = "Requiere HSBC Premier (£50K saldo o £75K ingreso)"
+            print("  Updated: HSBC Premier welcome_bonus_requirement")
+        if hsbc.is_available:
+            hsbc.is_available = False
+            print("  Updated: HSBC Premier is_available → False")
+
+    # --- Fix Qatar Airways Privilege Club: GI → INT ---
+    qatar_prog = db.query(models.LoyaltyProgram).filter_by(name="Qatar Airways Privilege Club").first()
+    if qatar_prog and qatar_prog.country == "GI":
+        qatar_prog.country = "INT"
+        print("  Updated: Qatar Airways Privilege Club country GI → INT")
+
+    qatar_opp = db.query(models.EarningOpportunity).filter_by(
+        name="Qatar Privilege Club — Avios por vuelos OneWorld"
+    ).first()
+    if qatar_opp:
+        if qatar_opp.country == "GI":
+            qatar_opp.country = "INT"
+            print("  Updated: Qatar opp country GI → INT")
+        if qatar_opp.category == "rideshare":
+            qatar_opp.category = "flights"
+            print("  Updated: Qatar opp category rideshare → flights")
+
+    # --- Fix BA GIB-LHR category: rideshare → flights ---
+    ba_gib = db.query(models.EarningOpportunity).filter_by(name="British Airways GIB-LHR Avios").first()
+    if ba_gib and ba_gib.category == "rideshare":
+        ba_gib.category = "flights"
+        print("  Updated: BA GIB-LHR category rideshare → flights")
+
+    # --- Remove UK-only credit cards inaccessible from Gibraltar ---
+    uk_only_cards = [
+        "BA Amex Premium Plus (UK)",
+        "Barclaycard Avios Plus (UK)",
+        "Amex Gold UK (Membership Rewards UK)",
+    ]
+    for card_name in uk_only_cards:
+        card = db.query(models.CreditCard).filter_by(name=card_name).first()
+        if card:
+            db.delete(card)
+            print(f"  Removed UK-only card: {card_name}")
+
+    # --- Remove orphaned Amex MR UK program (no cards left) ---
+    amex_uk_prog = db.query(models.LoyaltyProgram).filter_by(
+        name="American Express Membership Rewards UK"
+    ).first()
+    if amex_uk_prog:
+        db.delete(amex_uk_prog)
+        print("  Removed orphaned program: American Express Membership Rewards UK")
+
+    # --- Reclassify UK-only programs/opportunities: GI → UK ---
+    nectar_prog = db.query(models.LoyaltyProgram).filter_by(name="Nectar (Sainsbury's/Esso)").first()
+    if nectar_prog and nectar_prog.country == "GI":
+        nectar_prog.country = "UK"
+        print("  Updated: Nectar program country GI → UK")
+
+    uk_only_opps = {
+        "Sainsbury's + Esso Nectar → Avios (UK/GIB)": "Sainsbury's + Esso Nectar → Avios (UK)",
+        "Morrisons More — Puntos por compras y gasolina (UK)": None,
+        "ASDA Rewards — Cashback por compras y gasolina (UK)": None,
+        "Valero SaveUp — Puntos por gasolina (UK)": None,
+    }
+    for old_name, new_name in uk_only_opps.items():
+        opp = db.query(models.EarningOpportunity).filter_by(name=old_name).first()
+        if opp and opp.country == "GI":
+            opp.country = "UK"
+            if new_name:
+                opp.name = new_name
+            print(f"  Updated: {old_name} country GI → UK")
 
     db.commit()
     print("Fix broken data complete.")
