@@ -25,7 +25,6 @@ class RSSFeedScraper:
         "melhores_destinos": "https://www.melhoresdestinos.com.br/feed",
         "passageiro_primeira": "https://passageirodeprimeira.com/feed/",
         "pontos_voar": "https://pontospravoar.com/feed/",
-        "mil_milhas": "https://www.milmilhas.com.br/blog/feed/",
         "blog_maxmilhas": "https://blog.maxmilhas.com.br/feed/",
     }
 

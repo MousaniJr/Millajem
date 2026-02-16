@@ -50,7 +50,7 @@ def seed_loyalty_programs(db: Session) -> dict:
              notes="Mejor conversión hotel→Avios: 1:1. Transfere a Iberia o BA."),
         dict(name="Marriott Bonvoy", currency="Puntos Marriott", country="INT", category="hotel",
              avios_ratio=None,
-             website_url="https://www.marriott.com/loyalty/",
+             website_url="https://www.marriott.com/loyalty.mi",
              notes="60.000 Marriott = 25.000 Avios. Ratio bajo."),
     ]
 
@@ -192,7 +192,7 @@ def seed_credit_cards(db: Session, program_map: dict):
             welcome_bonus_requirement=None,
             minimum_income=None,
             is_available=True,
-            application_url="https://www.santander.com.br/cartao-de-credito/unlimited",
+            application_url="https://www.santander.com.br/cartao-credito-santander/unlimited",
             notes="Acumula Livelo. Livelo→Iberia vía Esfera (2:1) es la mejor ruta Brasil→Avios.",
             recommendation_score=85,
         ),
@@ -641,7 +641,7 @@ def seed_brazil_additions(db: Session):
              notes="Programa de LATAM Airlines. Acepta transferencias desde Livelo, Iupp, Esfera, Km de Vantagens."),
         dict(name="TudoAzul", currency="Pontos TudoAzul", country="BR", category="airline",
              avios_ratio=None,
-             website_url="https://www.tudoazul.com.br/",
+             website_url="https://tudoazul.voeazul.com.br/",
              notes="Programa de Azul Airlines. Acepta Petrobras Premmia, Km de Vantagens, Livelo, Iupp."),
         dict(name="Petrobras Premmia", currency="Pontos Premmia", country="BR", category="fuel",
              avios_ratio=None,
@@ -751,7 +751,7 @@ def seed_brazil_additions(db: Session):
             earning_description="5-10x pontos Livelo en compras online (electrónica, moda, viajes)",
             how_to_use="Accede al shopping de Livelo. Compra en tiendas partner. Transfiere a LATAM, Smiles u otras aerolíneas con bonus.",
             requirements="Cuenta Livelo + CPF",
-            signup_url="https://www.livelo.com.br/ganhe-pontos/shopping",
+            signup_url="https://www.livelo.com.br/",
             notes="Campañas de '10x pontos' son frecuentes. Combina con bonos de transferencia para máximo valor.",
             is_active=True,
             recommendation_score=88,
@@ -800,7 +800,7 @@ def seed_brazil_additions(db: Session):
             welcome_bonus_requirement=None,
             minimum_income=None,
             is_available=True,
-            application_url="https://nubank.com.br/cartao/ultravioleta/",
+            application_url="https://nubank.com.br/ultravioleta",
             notes="1% cashback o acumula Livelo. Fintech accesible. Sin burocracia de banco tradicional.",
             recommendation_score=75,
         ),
@@ -1504,7 +1504,7 @@ def seed_full_v3(db):
              earning_description='Puntos Marriott por noche (60K = 25K Avios)',
              how_to_use='Reserva directamente en marriott.com con tu cuenta Bonvoy.',
              requirements='Cuenta Marriott Bonvoy (gratuita)',
-             signup_url='https://www.marriott.com/loyalty/',
+             signup_url='https://www.marriott.com/loyalty.mi',
              notes='Ratio bajo a Avios pero buena red en España. AC Hotels, Renaissance, W.',
              is_active=True, recommendation_score=65),
         dict(name='NH Hotels — NH Rewards',
@@ -1582,7 +1582,7 @@ def seed_full_v3(db):
              earning_description='Pontos Marriott por noche (60K = 25K Avios)',
              how_to_use='Reserve en marriott.com con conta Bonvoy.',
              requirements='Conta Marriott Bonvoy (gratuita)',
-             signup_url='https://www.marriott.com/loyalty/',
+             signup_url='https://www.marriott.com/loyalty.mi',
              notes='Renaissance, JW Marriott São Paulo. Ratio bajo pero buena red.',
              is_active=True, recommendation_score=65),
         dict(name='Booking.com Brasil — via Livelo',
@@ -1631,7 +1631,7 @@ def seed_full_v3(db):
              earning_description='Marriott Points per night (60K = 25K Avios)',
              how_to_use='Book on marriott.com with Bonvoy account.',
              requirements='Marriott Bonvoy account (free)',
-             signup_url='https://www.marriott.com/loyalty/',
+             signup_url='https://www.marriott.com/loyalty.mi',
              notes='Good UK presence. Low Avios ratio but wide network.',
              is_active=True, recommendation_score=65),
         dict(name='IHG One Rewards UK — Reserva directa',
@@ -1789,6 +1789,45 @@ def seed_fix_broken_data(db):
         pv_source.priority = 5
         pv_source.notes = "Blog inactivo desde enero 2023. Contenido histórico útil pero sin actualizaciones."
         print("  Updated: Puntos Viajeros deprioritized (stale since Jan 2023)")
+
+    # --- Fix broken Brazil URLs ---
+    # TudoAzul: tudoazul.com.br redirects (302) to tudoazul.voeazul.com.br
+    tudoazul = db.query(models.LoyaltyProgram).filter_by(name="TudoAzul").first()
+    if tudoazul and "www.tudoazul.com.br" in (tudoazul.website_url or ""):
+        tudoazul.website_url = "https://tudoazul.voeazul.com.br/"
+        print("  Updated: TudoAzul website_url (redirect fix)")
+
+    # Livelo Marketplace: /ganhe-pontos/shopping gives 404
+    livelo_mkt = db.query(models.EarningOpportunity).filter_by(
+        name="Livelo Marketplace — Campañas bonificadas"
+    ).first()
+    if livelo_mkt and "ganhe-pontos/shopping" in (livelo_mkt.signup_url or ""):
+        livelo_mkt.signup_url = "https://www.livelo.com.br/"
+        print("  Updated: Livelo Marketplace signup_url (404 fix)")
+
+    # Nubank Ultravioleta: /cartao/ultravioleta/ gives 404, correct is /ultravioleta
+    nubank = db.query(models.CreditCard).filter_by(name="Nubank Ultravioleta (Livelo)").first()
+    if nubank and "cartao/ultravioleta" in (nubank.application_url or ""):
+        nubank.application_url = "https://nubank.com.br/ultravioleta"
+        print("  Updated: Nubank Ultravioleta application_url (404 fix)")
+
+    # Santander BR Unlimited: /cartao-de-credito/ gives 404, correct is /cartao-credito-santander/
+    santander_br = db.query(models.CreditCard).filter_by(name="Santander Unlimited Visa Infinite").first()
+    if santander_br and "cartao-de-credito/unlimited" in (santander_br.application_url or ""):
+        santander_br.application_url = "https://www.santander.com.br/cartao-credito-santander/unlimited"
+        print("  Updated: Santander BR Unlimited application_url (404 fix)")
+
+    # Marriott Bonvoy: /loyalty/ gives 404, correct is /loyalty.mi
+    for marriott_opp in db.query(models.EarningOpportunity).filter(
+        models.EarningOpportunity.signup_url == "https://www.marriott.com/loyalty/"
+    ).all():
+        marriott_opp.signup_url = "https://www.marriott.com/loyalty.mi"
+        print(f"  Updated: {marriott_opp.name} signup_url (404 fix)")
+
+    marriott_prog = db.query(models.LoyaltyProgram).filter_by(name="Marriott Bonvoy").first()
+    if marriott_prog and marriott_prog.website_url == "https://www.marriott.com/loyalty/":
+        marriott_prog.website_url = "https://www.marriott.com/loyalty.mi"
+        print("  Updated: Marriott Bonvoy program website_url (404 fix)")
 
     db.commit()
     print("Fix broken data complete.")
