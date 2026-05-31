@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 from .program import LoyaltyProgram
 
 
@@ -41,6 +42,11 @@ class EarningOpportunityBase(BaseModel):
     requirements: Optional[str] = None
     signup_url: Optional[str] = None
     more_info_url: Optional[str] = None
+    source_url: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    last_verified_at: Optional[datetime] = None
+    confidence: Optional[str] = None
     is_active: bool
     notes: Optional[str] = None
     recommendation_score: int

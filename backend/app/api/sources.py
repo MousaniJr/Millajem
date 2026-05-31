@@ -26,7 +26,7 @@ def list_sources(
     Listar todas las fuentes con filtros opcionales
 
     Filtros:
-    - source_type: rss_feed, instagram, twitter, telegram
+    - source_type: rss_feed, official_web, promo_landing, instagram, twitter, telegram
     - country: ES, BR, GI, INT
     - is_active: true/false
     """
@@ -63,6 +63,8 @@ def create_source(source: schemas.SourceCreate, db: Session = Depends(get_db)):
 
     Tipos disponibles:
     - rss_feed: Feed RSS de blog
+    - official_web: Web oficial de programa/partner
+    - promo_landing: Landing page de oferta
     - instagram: Cuenta de Instagram
     - twitter: Cuenta de Twitter/X
     - telegram: Canal de Telegram
@@ -149,7 +151,8 @@ def get_sources_stats(db: Session = Depends(get_db)):
     inactive = total - active
 
     by_type = {}
-    for source_type in ["rss_feed", "instagram", "twitter", "telegram"]:
+    source_types = db.query(Source.source_type).distinct().all()
+    for (source_type,) in source_types:
         count = db.query(Source).filter(Source.source_type == source_type).count()
         by_type[source_type] = count
 

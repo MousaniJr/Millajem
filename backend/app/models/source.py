@@ -1,5 +1,5 @@
 """
-Modelo de fuentes de información (RSS feeds, redes sociales)
+Modelo de fuentes de informacion (RSS feeds, webs oficiales, redes sociales)
 """
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
@@ -7,30 +7,31 @@ from app.database import Base
 
 
 class Source(Base):
-    """Fuente de información (RSS feed, cuenta social, etc.)"""
+    """Fuente de informacion (RSS feed, cuenta social, landing promo, etc.)"""
     __tablename__ = "sources"
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # Información básica
+    # Informacion basica
     name = Column(String, nullable=False)  # Nombre descriptivo
-    source_type = Column(String, nullable=False)  # "rss_feed", "instagram", "twitter", "telegram"
-    country = Column(String, nullable=False)  # "ES", "BR", "GI", "INT"
+    source_type = Column(String, nullable=False)  # rss_feed, official_web, promo_landing, instagram, twitter, telegram
+    country = Column(String, nullable=False)  # ES, BR, GI, INT
 
     # URLs
-    url = Column(String, nullable=False, unique=True)  # Feed URL o perfil URL
+    url = Column(String, nullable=False, unique=True)  # Feed URL o pagina objetivo
     website_url = Column(String, nullable=True)  # Website principal (opcional)
 
-    # Configuración
-    is_active = Column(Boolean, default=True)  # Si está activo para scraping
-    priority = Column(Integer, default=5)  # 1-10, mayor = más importante
+    # Configuracion
+    is_active = Column(Boolean, default=True)  # Si esta activo para scraping/seguimiento
+    priority = Column(Integer, default=5)  # 1-10, mayor = mas importante
 
     # Metadata
-    description = Column(String, nullable=True)  # Descripción breve
+    description = Column(String, nullable=True)  # Descripcion breve
     notes = Column(String, nullable=True)  # Notas adicionales
+    last_verified_at = Column(DateTime, nullable=True)
 
-    # Estadísticas
-    last_scraped = Column(DateTime, nullable=True)  # Última vez que se scrapeo
+    # Estadisticas
+    last_scraped = Column(DateTime, nullable=True)  # Ultima vez que se scrapeo
     scrape_count = Column(Integer, default=0)  # Veces que se ha scrapeado
     alert_count = Column(Integer, default=0)  # Alertas generadas
 

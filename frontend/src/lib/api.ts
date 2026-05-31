@@ -9,6 +9,27 @@ export const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Types
 export interface LoyaltyProgram {
   id: number;
@@ -89,6 +110,11 @@ export interface Alert {
   source_name: string | null;
   related_program: string | null;
   country: string | null;
+  confidence: string | null;
+  last_verified_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  detected_bonus_percentage: number | null;
   full_content: string | null;
   is_read: boolean;
   is_favorite: boolean;
@@ -188,6 +214,21 @@ export interface PaymentOption {
   programs_needed: string[];
 }
 
+export interface PartnerStoreOption {
+  name: string;
+  portal_name: string;
+  program_name: string | null;
+  base_rate: number;
+  promo_rate: number | null;
+  effective_rate: number;
+  total_points: number;
+  total_avios: number;
+  supports_gift_card: boolean;
+  supports_stacking: boolean;
+  confidence: string | null;
+  notes: string | null;
+}
+
 export interface StrategyItem {
   rank: number;
   opportunity_name: string | null;
@@ -201,6 +242,9 @@ export interface StrategyItem {
   payment_options: PaymentOption[];
   best_avios_per_euro: number;
   best_total_avios: number;
+  partner_store_options: PartnerStoreOption[];
+  stack_steps: string[];
+  warnings: string[];
 }
 
 export interface StrategyResponse {
@@ -210,9 +254,89 @@ export interface StrategyResponse {
   strategies: StrategyItem[];
 }
 
+export interface AwardRouteItem {
+  id: number;
+  route_name: string;
+  origin: string;
+  destination: string;
+  cabin: string;
+  program_name: string;
+  operating_airlines: string | null;
+  alliance: string | null;
+  table_type: string | null;
+  points_one_way: number | null;
+  total_points: number | null;
+  taxes_estimate: number | null;
+  taxes_currency: string | null;
+  baggage_included: boolean;
+  change_policy: string | null;
+  cancellation_policy: string | null;
+  recommended_booking_window: string | null;
+  notes: string | null;
+}
+
+export interface TransferRouteItem {
+  id: number;
+  source_program: string;
+  target_program: string;
+  base_ratio: number;
+  typical_bonus_min: number | null;
+  typical_bonus_max: number | null;
+  current_bonus: number | null;
+  effective_ratio: number;
+  confidence: string | null;
+  notes: string | null;
+}
+
+export interface TripMapResponse {
+  origin: string;
+  destination: string;
+  passengers: number;
+  cabin: string;
+  routes: AwardRouteItem[];
+  transfer_routes: TransferRouteItem[];
+  decision_steps: string[];
+  warnings: string[];
+}
+
+export interface LostMilesResponse {
+  country: string;
+  annual_spend: number;
+  conservative_points: number;
+  aggressive_points: number;
+  conservative_avios: number;
+  aggressive_avios: number;
+  recommendations: string[];
+}
+
 export const plannerApi = {
   getStrategies: (data: { category: string; amount: number; country: string }) =>
     api.post<StrategyResponse>('/api/planner/strategies', data),
+  getTripMap: (data: {
+    origin: string;
+    destination: string;
+    passengers: number;
+    cabin: string;
+    country: string;
+    flexibility: string;
+  }) => api.post<TripMapResponse>('/api/planner/trip-map', data),
+  getLostMiles: (data: {
+    country: string;
+    monthly_hotel: number;
+    monthly_fuel: number;
+    monthly_restaurants: number;
+    monthly_supermarkets: number;
+    monthly_travel: number;
+    monthly_shopping: number;
+    monthly_rideshare: number;
+    monthly_utilities: number;
+  }) => api.post<LostMilesResponse>('/api/planner/lost-miles', data),
+  getPartnerStores: (country?: string, category?: string) =>
+    api.get<PartnerStoreOption[]>('/api/planner/partner-stores', { params: { country, category } }),
+  getTransferRoutes: (source_program?: string, target_program?: string) =>
+    api.get<TransferRouteItem[]>('/api/planner/transfer-routes', { params: { source_program, target_program } }),
+  getAwardRoutes: (origin?: string, destination?: string, cabin?: string) =>
+    api.get<AwardRouteItem[]>('/api/planner/award-routes', { params: { origin, destination, cabin } }),
 };
 
 // Data export/import types

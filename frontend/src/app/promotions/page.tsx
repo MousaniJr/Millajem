@@ -108,6 +108,8 @@ export default function Promotions() {
     const labels: Record<string, string> = {
       bonus_transfer: '🔄 Bonus Transferencia',
       purchase_bonus: '💰 Bonus Compra',
+      stackable_combo: 'Combo Apilable',
+      award_discount: 'Descuento Emision',
       promo_detected: '🎯 Promoción',
       error_fare: '✈️ Error Fare',
       general_info: 'ℹ️ Info General',
@@ -118,6 +120,9 @@ export default function Promotions() {
   const getSourceTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       rss_blog: '📰 Blog',
+      official_web: 'Web Oficial',
+      promo_landing: 'Landing Promo',
+      partner_catalog: 'Catalogo Partner',
       instagram: '📸 Instagram',
       twitter: '🐦 Twitter/X',
       telegram: '✈️ Telegram',
@@ -239,6 +244,8 @@ export default function Promotions() {
               <option value="all">Todos</option>
               <option value="bonus_transfer">Bonus Transferencia</option>
               <option value="purchase_bonus">Bonus Compra</option>
+              <option value="stackable_combo">Combo Apilable</option>
+              <option value="award_discount">Descuento Emision</option>
               <option value="promo_detected">Promoción</option>
               <option value="error_fare">Error Fare</option>
             </select>
@@ -254,6 +261,9 @@ export default function Promotions() {
             >
               <option value="all">Todas</option>
               <option value="rss_blog">📰 Blogs</option>
+              <option value="official_web">Web Oficial</option>
+              <option value="promo_landing">Landing Promo</option>
+              <option value="partner_catalog">Catalogo Partner</option>
               <option value="instagram">📸 Instagram</option>
               <option value="twitter">🐦 Twitter</option>
               <option value="telegram">✈️ Telegram</option>
@@ -356,7 +366,9 @@ export default function Promotions() {
             <div
               key={alert.id}
               className={`bg-white rounded-lg shadow p-6 border-l-4 ${
-                alert.priority === 'high' || alert.priority === 'urgent'
+                alert.alert_type === 'stackable_combo'
+                  ? 'border-l-green-500 ring-1 ring-green-200'
+                  : alert.priority === 'high' || alert.priority === 'urgent'
                   ? 'border-l-orange-500'
                   : 'border-l-blue-500'
               } ${alert.is_read ? 'opacity-60' : ''}`}
@@ -387,6 +399,11 @@ export default function Promotions() {
                         {alert.related_program}
                       </span>
                     )}
+                    {alert.detected_bonus_percentage !== null && (
+                      <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded">
+                        +{alert.detected_bonus_percentage}% detectado
+                      </span>
+                    )}
                   </div>
 
                   {/* Title */}
@@ -414,6 +431,12 @@ export default function Promotions() {
                       >
                         Ver oferta completa →
                       </a>
+                    )}
+                    {alert.end_date && (
+                      <span>Fin: {new Date(alert.end_date).toLocaleDateString('es-ES')}</span>
+                    )}
+                    {alert.confidence && (
+                      <span className="uppercase">{alert.confidence}</span>
                     )}
                   </div>
                 </div>

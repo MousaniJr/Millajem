@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import case
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..database import get_db
@@ -56,15 +57,39 @@ def list_alerts(
         query = query.order_by(models.Alert.created_at.asc())
     elif order_by == "priority_desc":
         # Orden personalizado de prioridad
-        priority_order = {"urgent": 1, "high": 2, "normal": 3, "low": 4}
-        query = query.order_by(
-            models.Alert.priority.case(priority_order, value=models.Alert.priority),
-            models.Alert.created_at.desc()
+        priority_order = case(
+            (models.Alert.priority == "urgent", 1),
+            (models.Alert.priority == "high", 2),
+            (models.Alert.priority == "normal", 3),
+            (models.Alert.priority == "low", 4),
+            else_=5,
         )
+        query = query.order_by(priority_order, models.Alert.created_at.desc())
     else:  # date_desc por defecto
         query = query.order_by(models.Alert.created_at.desc())
 
     return query.offset(skip).limit(limit).all()
+
+
+@router.get("/stats/summary")
+def get_alerts_summary(db: Session = Depends(get_db)):
+    """Obtener resumen de alertas"""
+    total = db.query(models.Alert).count()
+    unread = db.query(models.Alert).filter(models.Alert.is_read == False).count()
+    favorites = db.query(models.Alert).filter(models.Alert.is_favorite == True).count()
+
+    by_type = {}
+    types = db.query(models.Alert.alert_type).distinct().all()
+    for (alert_type,) in types:
+        count = db.query(models.Alert).filter(models.Alert.alert_type == alert_type).count()
+        by_type[alert_type] = count
+
+    return {
+        "total": total,
+        "unread": unread,
+        "favorites": favorites,
+        "by_type": by_type
+    }
 
 
 @router.get("/{alert_id}", response_model=schemas.Alert)
@@ -121,24 +146,3 @@ def delete_alert(alert_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Alert deleted"}
 
-
-@router.get("/stats/summary")
-def get_alerts_summary(db: Session = Depends(get_db)):
-    """Obtener resumen de alertas"""
-    total = db.query(models.Alert).count()
-    unread = db.query(models.Alert).filter(models.Alert.is_read == False).count()
-    favorites = db.query(models.Alert).filter(models.Alert.is_favorite == True).count()
-
-    # Por tipo
-    by_type = {}
-    types = db.query(models.Alert.alert_type).distinct().all()
-    for (alert_type,) in types:
-        count = db.query(models.Alert).filter(models.Alert.alert_type == alert_type).count()
-        by_type[alert_type] = count
-
-    return {
-        "total": total,
-        "unread": unread,
-        "favorites": favorites,
-        "by_type": by_type
-    }

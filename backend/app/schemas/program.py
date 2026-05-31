@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 
 class LoyaltyProgramBase(BaseModel):
@@ -8,6 +9,9 @@ class LoyaltyProgramBase(BaseModel):
     country: str
     category: str
     avios_ratio: Optional[float] = None
+    ratio_confidence: Optional[str] = None
+    ratio_source_url: Optional[str] = None
+    ratio_last_verified_at: Optional[datetime] = None
     website_url: Optional[str] = None
     login_url: Optional[str] = None
     is_enrolled: bool = False

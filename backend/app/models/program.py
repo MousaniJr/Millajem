@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime
 from ..database import Base
 
 
@@ -13,14 +13,17 @@ class LoyaltyProgram(Base):
     category = Column(String)  # "airline", "hotel", "transfer", "shopping"
 
     # Transfer rates (to Avios)
-    avios_ratio = Column(Float, nullable=True)  # Ratio de conversión a Avios (null si no aplica)
+    avios_ratio = Column(Float, nullable=True)  # Ratio de conversion a Avios (null si no aplica)
+    ratio_confidence = Column(String, nullable=True)  # "official", "inferred", "stale"
+    ratio_source_url = Column(String, nullable=True)
+    ratio_last_verified_at = Column(DateTime, nullable=True)
 
     # URLs
     website_url = Column(String, nullable=True)
     login_url = Column(String, nullable=True)
 
     # Enrollment
-    is_enrolled = Column(Boolean, default=False)  # Si el usuario está inscrito en este programa
+    is_enrolled = Column(Boolean, default=False)  # Si el usuario esta inscrito en este programa
 
     # Metadata
     notes = Column(String, nullable=True)

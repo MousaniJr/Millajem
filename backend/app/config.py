@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     # Environment
     environment: str = "development"

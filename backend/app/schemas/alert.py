@@ -13,6 +13,11 @@ class AlertBase(BaseModel):
     source_name: Optional[str] = None
     related_program: Optional[str] = None
     country: Optional[str] = None
+    confidence: Optional[str] = None
+    last_verified_at: Optional[datetime] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    detected_bonus_percentage: Optional[float] = None
     full_content: Optional[str] = None
 
 

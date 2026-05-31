@@ -8,22 +8,26 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-import os
+from .config import get_settings
 
 # Configuration
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
+settings = get_settings()
+SECRET_KEY = settings.secret_key
+if not SECRET_KEY or SECRET_KEY == "change-this-secret-key":
     raise ValueError("SECRET_KEY environment variable is required")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 # Admin credentials from environment
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+ADMIN_USERNAME = settings.admin_username
+ADMIN_PASSWORD = settings.admin_password
 
 if not ADMIN_USERNAME or not ADMIN_PASSWORD:
     raise ValueError("ADMIN_USERNAME and ADMIN_PASSWORD environment variables are required")
+
+if settings.environment.lower() == "production" and ADMIN_PASSWORD == "millajem2026":
+    raise ValueError("ADMIN_PASSWORD must be changed in production")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()

@@ -1,7 +1,7 @@
 """
-Schemas Pydantic para fuentes de información
+Schemas Pydantic para fuentes de informacion
 """
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
@@ -9,14 +9,15 @@ from typing import Optional
 class SourceBase(BaseModel):
     """Schema base para Source"""
     name: str
-    source_type: str  # "rss_feed", "instagram", "twitter", "telegram"
-    country: str  # "ES", "BR", "GI", "INT"
+    source_type: str  # rss_feed, official_web, promo_landing, instagram, twitter, telegram
+    country: str  # ES, BR, GI, INT
     url: str
     website_url: Optional[str] = None
     is_active: bool = True
     priority: int = 5  # 1-10
     description: Optional[str] = None
     notes: Optional[str] = None
+    last_verified_at: Optional[datetime] = None
 
 
 class SourceCreate(SourceBase):
@@ -35,6 +36,7 @@ class SourceUpdate(BaseModel):
     priority: Optional[int] = None
     description: Optional[str] = None
     notes: Optional[str] = None
+    last_verified_at: Optional[datetime] = None
 
 
 class Source(SourceBase):

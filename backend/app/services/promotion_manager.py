@@ -35,8 +35,15 @@ class PromotionManager:
             alert_type=entry["alert_type"],
             priority=entry["priority"],
             source_url=entry["source_url"],
+            source_type=entry.get("source_type", "rss_blog"),
+            source_name=entry.get("source_name"),
             related_program=entry["related_program"],
             country=entry["country"],
+            confidence=entry.get("confidence"),
+            last_verified_at=entry.get("last_verified_at"),
+            start_date=entry.get("start_date"),
+            end_date=entry.get("end_date"),
+            detected_bonus_percentage=entry.get("detected_bonus_percentage"),
             full_content=entry["full_content"],
         )
         return alert

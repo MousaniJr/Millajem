@@ -3,6 +3,7 @@ Seed de datos iniciales para Millajem.
 Se ejecuta automáticamente en startup si las tablas están vacías.
 """
 from sqlalchemy.orm import Session
+from datetime import datetime
 from . import models
 
 
@@ -1100,6 +1101,507 @@ def seed_remaining_additions(db: Session):
     print("Remaining additions seed complete.")
 
 
+def seed_research_expansion_2026(db: Session):
+    """Incrementos de investigacion Feb 2026: fuentes oficiales y oportunidades cotidianas."""
+    verified_at = datetime(2026, 2, 20)
+
+    def get_program(name):
+        return db.query(models.LoyaltyProgram).filter_by(name=name).first()
+
+    # 1) Marcar confianza y verificacion de ratios principales
+    ratio_updates = [
+        ("American Express Membership Rewards ES", "official",
+         "https://www.iberia.com/es/iberiaplus/partners/finanzas/"),
+        ("Esfera Santander", "official",
+         "https://www.iberia.com/br/iberiaplus/partners/financas/"),
+        ("Livelo", "official",
+         "https://www.iberia.com/br/iberiaplus/partners/financas/"),
+        ("Iberia Club", "official",
+         "https://www.iberia.com/es/iberia-club/collect-avios/"),
+        ("British Airways Executive Club", "official",
+         "https://www.britishairways.com/content/executive-club/collecting-avios"),
+    ]
+    for program_name, confidence, source_url in ratio_updates:
+        program = get_program(program_name)
+        if not program:
+            continue
+        program.ratio_confidence = confidence
+        program.ratio_source_url = source_url
+        program.ratio_last_verified_at = verified_at
+
+    # 2) Fuentes nuevas (prioridad alta)
+    new_sources = [
+        dict(
+            name="Iberia Partners Ofertas ES",
+            source_type="official_web",
+            country="ES",
+            url="https://www.iberia.com/es/iberiaplus/partners/ofertas/",
+            website_url="https://www.iberia.com/es/iberia-club/partners/",
+            is_active=True,
+            priority=10,
+            description="Pagina oficial de ofertas de partners Iberia Club en Espana.",
+            notes="Referencia principal para bonus temporales ES.",
+            last_verified_at=verified_at,
+        ),
+        dict(
+            name="Iberia Club Magazine Areas",
+            source_type="promo_landing",
+            country="ES",
+            url="https://www.iberiaclubmagazine.com/es/especiales/areas/",
+            website_url="https://www.iberiaclubmagazine.com/",
+            is_active=True,
+            priority=9,
+            description="Landing de oferta Areas para acumular Avios.",
+            notes="Promociones cotidianas de restauracion y viaje.",
+            last_verified_at=verified_at,
+        ),
+        dict(
+            name="Iberia Club Magazine Paradores",
+            source_type="promo_landing",
+            country="ES",
+            url="https://www.iberiaclubmagazine.com/es/especiales/paradores/",
+            website_url="https://www.iberiaclubmagazine.com/",
+            is_active=True,
+            priority=9,
+            description="Landing de oferta Paradores para socios Iberia Club.",
+            notes="Suele incluir bonus de bienvenida o por estancia.",
+            last_verified_at=verified_at,
+        ),
+        dict(
+            name="Iberia Club Magazine Endesa",
+            source_type="promo_landing",
+            country="ES",
+            url="https://www.iberiaclubmagazine.com/es/especiales/endesa/",
+            website_url="https://www.iberiaclubmagazine.com/",
+            is_active=True,
+            priority=9,
+            description="Landing de oferta Endesa con bonus Avios por alta.",
+            notes="Oferta de energia con impacto alto en acumulacion.",
+            last_verified_at=verified_at,
+        ),
+        dict(
+            name="Iberia Partners Ofertas BR",
+            source_type="official_web",
+            country="BR",
+            url="https://www.iberia.com/br/iberiaplus/partners/ofertas/",
+            website_url="https://www.iberia.com/br/iberiaplus/partners/",
+            is_active=True,
+            priority=10,
+            description="Pagina oficial de ofertas Iberia Club para Brasil.",
+            notes="Clave para verificar cambios de conversion y bonus BR.",
+            last_verified_at=verified_at,
+        ),
+        dict(
+            name="Smiles Promocoes",
+            source_type="official_web",
+            country="BR",
+            url="https://www.smiles.com.br/promocao",
+            website_url="https://www.smiles.com.br/",
+            is_active=True,
+            priority=10,
+            description="Portal oficial de promociones de Smiles.",
+            notes="Fuente para bonus de transferencia y campañas temporales.",
+            last_verified_at=verified_at,
+        ),
+        dict(
+            name="Avios UK",
+            source_type="official_web",
+            country="GI",
+            url="https://www.avios.com/en-gb",
+            website_url="https://www.avios.com/en-gb",
+            is_active=True,
+            priority=8,
+            description="Portal oficial Avios para seguimiento de ecosistema UK/GI.",
+            notes="Relevante para estrategia Gibraltar y rutas via Heathrow.",
+            last_verified_at=verified_at,
+        ),
+        dict(
+            name="GibFuel",
+            source_type="official_web",
+            country="GI",
+            url="https://www.gibfuel.gi/",
+            website_url="https://www.gibfuel.gi/",
+            is_active=True,
+            priority=7,
+            description="Cadena local de combustible y retail en Gibraltar.",
+            notes="Fuente local para promociones cotidianas no aereas.",
+            last_verified_at=verified_at,
+        ),
+    ]
+
+    for source_data in new_sources:
+        existing_source = db.query(models.Source).filter_by(url=source_data["url"]).first()
+        if existing_source:
+            for key, value in source_data.items():
+                setattr(existing_source, key, value)
+        else:
+            db.add(models.Source(**source_data))
+
+    # 3) Oportunidades nuevas ES/GI derivadas del estudio
+    iberia = get_program("Iberia Club")
+    ba = get_program("British Airways Executive Club")
+    avios_uk = get_program("British Airways Executive Club")
+
+    new_opportunities = [
+        dict(
+            name="Areas + Iberia Club",
+            category="restaurants",
+            country="ES",
+            loyalty_program_id=iberia.id if iberia else None,
+            earning_rate=1.0,
+            earning_description="Acumula Avios por consumo en establecimientos Areas adheridos.",
+            how_to_use="Identificate con tu numero Iberia Club en promos Areas publicadas en Iberia Club Magazine.",
+            requirements="Cuenta Iberia Club activa.",
+            signup_url="https://www.iberiaclubmagazine.com/es/especiales/areas/",
+            source_url="https://www.iberiaclubmagazine.com/es/especiales/areas/",
+            start_date=None,
+            end_date=datetime(2026, 12, 31),
+            last_verified_at=verified_at,
+            is_active=True,
+            confidence="official",
+            notes="Oferta con vigencia publicada hasta fin de 2026 en landing oficial indexada.",
+            recommendation_score=86,
+        ),
+        dict(
+            name="Paradores + Iberia Club",
+            category="hotels",
+            country="ES",
+            loyalty_program_id=iberia.id if iberia else None,
+            earning_rate=1.0,
+            earning_description="Bonus Avios en reserva/alta de partner Paradores.",
+            how_to_use="Reserva segun condiciones activas en landing de Paradores para Iberia Club.",
+            requirements="Cuenta Iberia Club.",
+            signup_url="https://www.iberiaclubmagazine.com/es/especiales/paradores/",
+            source_url="https://www.iberiaclubmagazine.com/es/especiales/paradores/",
+            start_date=None,
+            end_date=datetime(2026, 2, 28),
+            last_verified_at=verified_at,
+            is_active=True,
+            confidence="official",
+            notes="Vigencia corta; revisar antes de recomendar como estrategia estable.",
+            recommendation_score=78,
+        ),
+        dict(
+            name="Endesa + Iberia Club",
+            category="utilities",
+            country="ES",
+            loyalty_program_id=iberia.id if iberia else None,
+            earning_rate=1.0,
+            earning_description="Bonus Avios por alta/contratacion de energia Endesa.",
+            how_to_use="Accede desde landing Iberia Club Magazine y completa alta de suministro.",
+            requirements="Cuenta Iberia Club + alta de contrato Endesa.",
+            signup_url="https://www.iberiaclubmagazine.com/es/especiales/endesa/",
+            source_url="https://www.iberiaclubmagazine.com/es/especiales/endesa/",
+            start_date=None,
+            end_date=datetime(2026, 3, 31),
+            last_verified_at=verified_at,
+            is_active=True,
+            confidence="official",
+            notes="Suele tener bonus elevado pero con ventana promocional acotada.",
+            recommendation_score=88,
+        ),
+        dict(
+            name="GibFuel+ Cashback Gibraltar",
+            category="fuel",
+            country="GI",
+            loyalty_program_id=ba.id if ba else (avios_uk.id if avios_uk else None),
+            earning_rate=1.0,
+            earning_description="Ahorro/cashback local en combustible y retail diario en Gibraltar.",
+            how_to_use="Registrate en el programa local y combina con tarjeta que acumule Avios para doble beneficio.",
+            requirements="Registro local en GibFuel+.",
+            signup_url="https://www.gibfuel.gi/",
+            source_url="https://www.gibfuel.gi/",
+            start_date=None,
+            end_date=None,
+            last_verified_at=verified_at,
+            is_active=True,
+            confidence="official",
+            notes="No transfiere directo a Avios, pero mejora estrategia de coste neto diario en GI.",
+            recommendation_score=62,
+        ),
+    ]
+
+    for opp_data in new_opportunities:
+        existing_opp = db.query(models.EarningOpportunity).filter_by(name=opp_data["name"]).first()
+        if existing_opp:
+            for key, value in opp_data.items():
+                setattr(existing_opp, key, value)
+        else:
+            db.add(models.EarningOpportunity(**opp_data))
+
+    db.commit()
+    print("Research expansion 2026 seed complete: official sources + ES/GI opportunities + ratio confidence.")
+
+
+def seed_strategy_expansion_2026(db: Session):
+    """Seed stacking stores, transfer routes, and award route references from the May 2026 review."""
+
+    verified_at = datetime(2026, 5, 31)
+
+    def program(name):
+        return db.query(models.LoyaltyProgram).filter_by(name=name).first()
+
+    def program_like(pattern):
+        return db.query(models.LoyaltyProgram).filter(models.LoyaltyProgram.name.ilike(f"%{pattern}%")).first()
+
+    iberia = program("Iberia Club")
+    ba = program("British Airways Executive Club")
+    vueling = program("Vueling Club")
+    esfera = program("Esfera")
+    livelo = program("Livelo")
+    tap = program("TAP Miles&Go")
+    latam = program("LATAM Pass") or program("Latam Pass")
+    smiles = program("Smiles")
+    tudoazul = program("TudoAzul")
+    aeroplan = program("Air Canada Aeroplan")
+    flying_blue = program("Flying Blue (AF/KLM)")
+    qatar = program("Qatar Airways Privilege Club") or program("Qatar Privilege Club")
+    finnair = program("Finnair Plus")
+    revpoints_es = program("Revolut RevPoints ES")
+
+    partner_stores = [
+        dict(name="Amazon España", country="ES", category="shopping", portal_name="Iberia Shopping",
+             loyalty_program_id=iberia.id if iberia else None, base_rate=1, promo_rate=None,
+             supports_gift_card=True, supports_stacking=True,
+             url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             source_url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Comparar con Vueling eStore/RevPoints antes de comprar; el multiplicador cambia por campaña."),
+        dict(name="IKEA España", country="ES", category="shopping", portal_name="Iberia Shopping",
+             loyalty_program_id=iberia.id if iberia else None, base_rate=2, promo_rate=None,
+             supports_gift_card=True, supports_stacking=True,
+             url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             source_url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Especialmente útil en compras grandes de hogar; verificar tracking y condiciones de gift card."),
+        dict(name="Decathlon España", country="ES", category="shopping", portal_name="Iberia Shopping",
+             loyalty_program_id=iberia.id if iberia else None, base_rate=2, promo_rate=None,
+             supports_gift_card=True, supports_stacking=True,
+             url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             source_url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Candidato a acumulación doble si hay gift card bonificada y portal activo."),
+        dict(name="Apple España", country="ES", category="shopping", portal_name="Iberia Shopping / BA eStore",
+             loyalty_program_id=iberia.id if iberia else None, base_rate=1, promo_rate=None,
+             supports_gift_card=False, supports_stacking=False,
+             url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             source_url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Revisar exclusiones de productos nuevos antes de comprar."),
+        dict(name="GetYourGuide", country="INT", category="travel", portal_name="Iberia Shopping / BA eStore",
+             loyalty_program_id=iberia.id if iberia else None, base_rate=5, promo_rate=10,
+             supports_gift_card=False, supports_stacking=True,
+             url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             source_url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Comparar Iberia vs BA vs AerClub; el video cita campañas de hasta 10 Avios/EUR."),
+        dict(name="Miravia", country="ES", category="shopping", portal_name="Iberia Shopping",
+             loyalty_program_id=iberia.id if iberia else None, base_rate=2, promo_rate=None,
+             supports_gift_card=False, supports_stacking=True,
+             url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             source_url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Verificar multiplicador antes de cada compra."),
+        dict(name="Temu", country="INT", category="shopping", portal_name="Iberia Shopping / BA eStore / RevPoints",
+             loyalty_program_id=iberia.id if iberia else None, base_rate=5, promo_rate=None,
+             supports_gift_card=False, supports_stacking=True,
+             url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             source_url="https://www.iberia.com/es/iberiaplus/partners/tiendas/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="El multiplicador puede variar mucho; tratar campañas extremas como temporales."),
+        dict(name="Shein", country="INT", category="shopping", portal_name="BA eStore / Iberia Shopping",
+             loyalty_program_id=ba.id if ba else iberia.id if iberia else None, base_rate=5, promo_rate=25,
+             supports_gift_card=False, supports_stacking=True,
+             url="https://shopping.ba.com/",
+             source_url="https://shopping.ba.com/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Comparar BA eStore e Iberia; el video cita campañas UK de 25 Avios/GBP."),
+        dict(name="Trainline", country="GI", category="travel", portal_name="BA eStore",
+             loyalty_program_id=ba.id if ba else None, base_rate=2, promo_rate=None,
+             supports_gift_card=False, supports_stacking=False,
+             url="https://shopping.ba.com/",
+             source_url="https://shopping.ba.com/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Útil para trenes UK/Europa si se entra desde eStore."),
+        dict(name="Just Eat UK", country="GI", category="restaurants", portal_name="BA eStore",
+             loyalty_program_id=ba.id if ba else None, base_rate=1, promo_rate=None,
+             supports_gift_card=False, supports_stacking=False,
+             url="https://shopping.ba.com/",
+             source_url="https://shopping.ba.com/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Aplicar solo si la compra local/UK trackea desde BA eStore."),
+        dict(name="Eventim", country="INT", category="travel", portal_name="Livelo / Iberia Shopping",
+             loyalty_program_id=livelo.id if livelo else iberia.id if iberia else None, base_rate=2, promo_rate=None,
+             supports_gift_card=False, supports_stacking=False,
+             url="https://www.livelo.com.br/",
+             source_url="https://www.livelo.com.br/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Tickets y eventos pueden generar muchas millas; validar país y portal disponible."),
+        dict(name="Hotels.com / Booking via portal", country="INT", category="hotel", portal_name="Iberia Shopping / BA eStore / Livelo",
+             loyalty_program_id=iberia.id if iberia else None, base_rate=4, promo_rate=10,
+             supports_gift_card=False, supports_stacking=True,
+             url="https://www.iberia.com/es/iberiaplus/partners/hoteles/",
+             source_url="https://www.iberia.com/es/iberiaplus/partners/hoteles/",
+             confidence="inferred", last_verified_at=verified_at,
+             notes="Base conservadora 4 puntos/EUR; campañas de hotel pueden ser mucho más altas."),
+    ]
+
+    for data in partner_stores:
+        if not data.get("loyalty_program_id"):
+            continue
+        existing = db.query(models.PartnerStore).filter_by(
+            name=data["name"], portal_name=data["portal_name"], country=data["country"]
+        ).first()
+        if existing:
+            for key, value in data.items():
+                setattr(existing, key, value)
+        else:
+            db.add(models.PartnerStore(**data))
+
+    transfer_routes = [
+        dict(source_program_id=esfera.id if esfera else None, target_program_id=iberia.id if iberia else None,
+             base_ratio=2, typical_bonus_min=20, typical_bonus_max=30, current_bonus=None,
+             source_url="https://www.iberia.com/br/iberiaplus/partners/",
+             last_verified_at=verified_at, confidence="official",
+             notes="Ruta clave Brasil -> Avios. Esperar bonus cuando no haya urgencia."),
+        dict(source_program_id=livelo.id if livelo else None, target_program_id=iberia.id if iberia else None,
+             base_ratio=3.5, typical_bonus_min=10, typical_bonus_max=30, current_bonus=None,
+             source_url="https://www.iberia.com/br/iberiaplus/partners/",
+             last_verified_at=verified_at, confidence="official",
+             notes="Ratio base peor que Esfera; puede mejorar con campañas."),
+        dict(source_program_id=esfera.id if esfera else None, target_program_id=tap.id if tap else None,
+             base_ratio=2, typical_bonus_min=20, typical_bonus_max=30, current_bonus=None,
+             source_url="https://www.esfera.com.vc/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="El video indica que Esfera es partner TAP y cita campañas recientes; verificar antes de transferir."),
+        dict(source_program_id=livelo.id if livelo else None, target_program_id=latam.id if latam else None,
+             base_ratio=1, typical_bonus_min=25, typical_bonus_max=30, current_bonus=None,
+             source_url="https://www.livelo.com.br/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Bonos LATAM/Livelo frecuentes; útil para tabla dinámica y upgrades."),
+        dict(source_program_id=livelo.id if livelo else None, target_program_id=smiles.id if smiles else None,
+             base_ratio=1, typical_bonus_min=50, typical_bonus_max=80, current_bonus=None,
+             source_url="https://www.livelo.com.br/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Vigilar bonus alto y coste final por milheiro."),
+        dict(source_program_id=livelo.id if livelo else None, target_program_id=tudoazul.id if tudoazul else None,
+             base_ratio=1, typical_bonus_min=50, typical_bonus_max=100, current_bonus=None,
+             source_url="https://www.livelo.com.br/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Útil para partners Star Alliance/bilaterales cuando hay bonus fuerte."),
+        dict(source_program_id=revpoints_es.id if revpoints_es else None, target_program_id=iberia.id if iberia else None,
+             base_ratio=1, typical_bonus_min=10, typical_bonus_max=20, current_bonus=None,
+             source_url="https://www.revolut.com/revpoints/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Revolut/RevPoints puede tener bonus temporales a Avios; verificar app antes de transferir."),
+        dict(source_program_id=revpoints_es.id if revpoints_es else None, target_program_id=tap.id if tap else None,
+             base_ratio=1, typical_bonus_min=10, typical_bonus_max=20, current_bonus=None,
+             source_url="https://www.revolut.com/revpoints/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Útil si TAP es la mejor disponibilidad, pero comparar tasas y coste final."),
+    ]
+
+    for data in transfer_routes:
+        if not data.get("source_program_id") or not data.get("target_program_id"):
+            continue
+        existing = db.query(models.TransferRoute).filter_by(
+            source_program_id=data["source_program_id"], target_program_id=data["target_program_id"]
+        ).first()
+        if existing:
+            for key, value in data.items():
+                setattr(existing, key, value)
+        else:
+            db.add(models.TransferRoute(**data))
+
+    award_routes = [
+        dict(route_name="Madrid - Sao Paulo directo Iberia", origin="MAD", destination="GRU", region="Europe-Brazil",
+             cabin="business", program_id=iberia.id if iberia else None, operating_airlines="Iberia",
+             alliance="oneworld", table_type="fixed", booking_channel="web", points_one_way=50500,
+             taxes_estimate=120, taxes_currency="EUR", baggage_included=True,
+             change_policy="Depende de tarifa Iberia; verificar antes de emitir.",
+             cancellation_policy="Depende de tarifa Iberia; verificar antes de emitir.",
+             recommended_booking_window="Buscar con mucha antelación en tablas fijas, idealmente 10-12 meses.",
+             source_url="https://www.iberia.com/es/iberia-club/use-avios/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Sweet spot familiar principal para Brasil en business off-peak."),
+        dict(route_name="Madrid - Sao Paulo directo Iberia", origin="MAD", destination="GRU", region="Europe-Brazil",
+             cabin="economy", program_id=iberia.id if iberia else None, operating_airlines="Iberia",
+             alliance="oneworld", table_type="fixed", booking_channel="web", points_one_way=20000,
+             taxes_estimate=80, taxes_currency="EUR", baggage_included=False,
+             change_policy="Revisar si tarifa incluye cambios.",
+             cancellation_policy="Revisar condiciones antes de emitir.",
+             recommended_booking_window="Buscar con antelación y comparar peak/off-peak.",
+             source_url="https://www.iberia.com/es/iberia-club/use-avios/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Base para comparar contra dinero y promociones de emisión."),
+        dict(route_name="Sao Paulo - Madrid directo Iberia", origin="GRU", destination="MAD", region="Europe-Brazil",
+             cabin="business", program_id=iberia.id if iberia else None, operating_airlines="Iberia",
+             alliance="oneworld", table_type="fixed", booking_channel="web", points_one_way=50500,
+             taxes_estimate=35, taxes_currency="EUR", baggage_included=True,
+             change_policy="Revisar condiciones; salida de Brasil suele reducir recargos.",
+             cancellation_policy="Revisar condiciones antes de emitir.",
+             recommended_booking_window="Considerar billete one-way separado para la vuelta desde Brasil.",
+             source_url="https://www.iberia.com/es/iberia-club/use-avios/",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Salida de Brasil puede tener tasas/recargos mucho menores."),
+        dict(route_name="Gibraltar - Londres Heathrow BA", origin="GIB", destination="LHR", region="GI-UK",
+             cabin="economy", program_id=ba.id if ba else None, operating_airlines="British Airways",
+             alliance="oneworld", table_type="fixed", booking_channel="web", points_one_way=7250,
+             taxes_estimate=1, taxes_currency="GBP", baggage_included=False,
+             change_policy="Revisar tarifa Avios BA.",
+             cancellation_policy="Revisar tarifa Avios BA.",
+             recommended_booking_window="Útil como posicionamiento Avios; comparar GIB y AGP.",
+             source_url="https://www.britishairways.com/content/executive-club/spending-avios",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Sweet spot local para Gibraltar."),
+        dict(route_name="Europa - Brasil via TAP", origin="LIS/OPO/MAD", destination="GRU/GIG/REC/FOR", region="Europe-Brazil",
+             cabin="economy", program_id=tap.id if tap else None, operating_airlines="TAP Air Portugal",
+             alliance="Star Alliance", table_type="dynamic", booking_channel="web",
+             points_one_way=None, taxes_estimate=150, taxes_currency="EUR", baggage_included=False,
+             change_policy="TAP puede ser cómoda por ruta directa, pero comparar coste final.",
+             cancellation_policy="Revisar tarifa.",
+             recommended_booking_window="Comparar disponibilidad directa y partners; no asumir que TAP es la más barata.",
+             source_url="https://www.flytap.com/miles-and-go",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="El video advierte que TAP directa puede ser cómoda pero no siempre óptima."),
+        dict(route_name="Star Alliance a Brasil via Aeroplan", origin="Europe", destination="Brazil", region="Europe-Brazil",
+             cabin="business", program_id=aeroplan.id if aeroplan else None, operating_airlines="TAP/Lufthansa/Swiss/Turkish/United partners",
+             alliance="Star Alliance", table_type="partner", booking_channel="web",
+             points_one_way=None, taxes_estimate=120, taxes_currency="EUR", baggage_included=True,
+             change_policy="Revisar reglas Aeroplan.",
+             cancellation_policy="Revisar reglas Aeroplan.",
+             recommended_booking_window="Confirmar disponibilidad en Aeroplan antes de comprar puntos.",
+             source_url="https://www.aircanada.com/aeroplan",
+             last_verified_at=verified_at, confidence="inferred",
+             notes="Comprar puntos Aeroplan puede servir si hay disponibilidad partner."),
+    ]
+
+    for data in award_routes:
+        if not data.get("program_id"):
+            continue
+        existing = db.query(models.AwardRoute).filter_by(
+            route_name=data["route_name"], origin=data["origin"], destination=data["destination"],
+            cabin=data["cabin"], program_id=data["program_id"]
+        ).first()
+        if existing:
+            for key, value in data.items():
+                setattr(existing, key, value)
+        else:
+            db.add(models.AwardRoute(**data))
+
+    # Remove exact duplicate sources by (lowercase name, country), keeping the one with highest priority and stats.
+    seen = {}
+    for source in db.query(models.Source).order_by(models.Source.priority.desc(), models.Source.alert_count.desc()).all():
+        key = (source.name.lower(), source.country)
+        if key in seen:
+            db.delete(source)
+        else:
+            seen[key] = source.id
+
+    db.commit()
+    print("Strategy expansion 2026 seed complete: partner stores, transfer routes, award routes, duplicate source cleanup.")
+
+
 def run_seed(db: Session):
     """Ejecuta el seed completo si la BD está vacía"""
     # Solo ejecutar si no hay programas (evita duplicados)
@@ -1119,6 +1621,8 @@ def run_seed(db: Session):
     seed_remaining_additions(db)
     seed_full_v2(db)
     seed_full_v3(db)
+    seed_research_expansion_2026(db)
+    seed_strategy_expansion_2026(db)
     seed_fix_broken_data(db)
     return True
 
